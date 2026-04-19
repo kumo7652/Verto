@@ -1,0 +1,3 @@
+roundRobin=com.example.loadbalancer.RoundRobinLoadBalancer
+random=com.example.loadbalancer.RandomLoadBalancer
+consistentHash=com.example.loadbalancer.ConsistentHashLoadBalancer

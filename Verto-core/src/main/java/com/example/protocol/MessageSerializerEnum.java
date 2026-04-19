@@ -1,0 +1,63 @@
+package com.example.protocol;
+
+import cn.hutool.core.util.ObjectUtil;
+import lombok.Getter;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * 消息序列化器
+ */
+@Getter
+public enum MessageSerializerEnum {
+    JDK(0, "jdk"),
+    JSON(1, "json"),
+    KRYO(2, "kryo"),
+    HESSIAN(3, "hessian"),
+    PROTOBUF(4, "protobuf");
+
+    private final int key;
+
+    private final String value;
+
+    MessageSerializerEnum(int key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    /**
+     * 获取值列表
+     */
+    public static List<String> getValues() {
+        return Arrays.stream(values()).map(item -> item.value).collect(Collectors.toList());
+    }
+
+    /**
+     * 根据 key 获取枚举
+     */
+    public static MessageSerializerEnum getEnumByKey(int key) {
+        for (MessageSerializerEnum anEnum : MessageSerializerEnum.values()) {
+            if (anEnum.key == key) {
+                return anEnum;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 根据 value 获取枚举
+     */
+    public static MessageSerializerEnum getEnumByValue(String value) {
+        if (ObjectUtil.isEmpty(value)) {
+            return null;
+        }
+        for (MessageSerializerEnum anEnum : MessageSerializerEnum.values()) {
+            if (anEnum.value.equals(value)) {
+                return anEnum;
+            }
+        }
+        return null;
+    }
+}

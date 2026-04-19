@@ -1,0 +1,5 @@
+jdk=com.example.serializer.JDKSerializer
+json=com.example.serializer.JSONSerializer
+hessian=com.example.serializer.HessianSerializer
+kryo=com.example.serializer.KryoSerializer
+protobuf=com.example.serializer.ProtobufSerializer
