@@ -1,0 +1,3 @@
+com.pulsar.fault.tolerant.FailFastTolerantStrategy
+com.pulsar.fault.tolerant.FailOverTolerantStrategy
+com.pulsar.fault.tolerant.FailSafeTolerantStrategy

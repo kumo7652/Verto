@@ -1,0 +1,2 @@
+com.pulsar.fault.retry.NoRetryStrategy
+com.pulsar.fault.retry.FixedIntervalRetryStrategy
