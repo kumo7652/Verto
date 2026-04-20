@@ -1,0 +1,4 @@
+com.pulsar.serializer.JDKSerializer
+com.pulsar.serializer.JSONSerializer
+com.pulsar.serializer.HessianSerializer
+com.pulsar.serializer.KryoSerializer

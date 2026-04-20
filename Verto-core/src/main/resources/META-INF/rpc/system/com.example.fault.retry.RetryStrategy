@@ -1,2 +1,0 @@
-no=com.example.fault.retry.NoRetryStrategy
-fixedInterval=com.example.fault.retry.FixedIntervalRetryStrategy

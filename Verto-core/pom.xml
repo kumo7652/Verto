@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.example</groupId>
+        <groupId>com.pulsar</groupId>
         <artifactId>Verto</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
@@ -16,31 +16,31 @@
     <dependencies>
         <!-- 内部模块 -->
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>common</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>serializer</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>protocol</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>transport</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>loadbalancer</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.pulsar</groupId>
             <artifactId>resilience</artifactId>
         </dependency>
 
