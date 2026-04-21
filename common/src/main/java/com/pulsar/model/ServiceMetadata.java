@@ -1,12 +1,15 @@
-package com.pulsar.metadata.model;
+package com.pulsar.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 服务元数据
+ * 服务元数据 - 元数据中心操作的实体，包含服务定义和方法信息
  */
 @Data
 @Builder
@@ -31,6 +34,7 @@ public class ServiceMetadata {
     /**
      * 版本号
      */
+    @Builder.Default
     private String serviceVersion = "1.0";
 
     /**
@@ -39,12 +43,13 @@ public class ServiceMetadata {
     private String serviceGroup;
 
     /**
-     * 服务提供者主机
+     * 服务接口类名
      */
-    private String serviceHost;
+    private String interfaceClass;
 
     /**
-     * 服务提供者端口
+     * 方法列表
      */
-    private Integer servicePort;
+    @Builder.Default
+    private List<MethodMetadata> methods = new ArrayList<>();
 }

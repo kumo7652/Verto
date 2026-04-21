@@ -1,7 +1,7 @@
 package com.pulsar.loadbalancer;
 
 import com.pulsar.extension.SpiExtension;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 
 import java.util.List;
 import java.util.Map;
@@ -12,16 +12,16 @@ public class RandomLoadBalancer implements LoadBalancer {
     private final Random random = new Random();
 
     @Override
-    public ServiceInstance select(Map<String, Object> requestParams, List<ServiceInstance> serviceInstances) {
-        int size = serviceInstances.size();
+    public ServiceNode select(Map<String, Object> requestParams, List<ServiceNode> serviceNodes) {
+        int size = serviceNodes.size();
         if (size == 0) {
             return null;
         }
 
         if (size == 1) {
-            return serviceInstances.get(0);
+            return serviceNodes.get(0);
         }
 
-        return serviceInstances.get(random.nextInt(size));
+        return serviceNodes.get(random.nextInt(size));
     }
 }

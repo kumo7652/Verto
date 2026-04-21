@@ -1,7 +1,7 @@
 package com.pulsar.loadbalancer;
 
 import com.pulsar.extension.SpiExtension;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 
 import java.util.List;
 import java.util.Map;
@@ -9,25 +9,25 @@ import java.util.TreeMap;
 
 @SpiExtension(name = "consistentHash")
 public class ConsistentHashLoadBalancer implements LoadBalancer {
-    private final TreeMap<Integer, ServiceInstance> nodes = new TreeMap<>();
+    private final TreeMap<Integer, ServiceNode> nodes = new TreeMap<>();
     private static final int VIRTUAL_NODE_COUNT = 100;
 
     @Override
-    public ServiceInstance select(Map<String, Object> requestParams, List<ServiceInstance> serviceInstances) {
-        if (serviceInstances.isEmpty()) {
+    public ServiceNode select(Map<String, Object> requestParams, List<ServiceNode> serviceNodes) {
+        if (serviceNodes.isEmpty()) {
             return null;
         }
 
-        for (ServiceInstance serviceInstance : serviceInstances) {
+        for (ServiceNode serviceNode : serviceNodes) {
             for (int i = 0; i < VIRTUAL_NODE_COUNT; i++) {
-                int hash = getHash(serviceInstance.getServiceAddress() + "#" + i);
-                nodes.put(hash, serviceInstance);
+                int hash = getHash(serviceNode.getServiceAddress() + "#" + i);
+                nodes.put(hash, serviceNode);
             }
         }
 
         int hash = getHash(requestParams);
 
-        Map.Entry<Integer, ServiceInstance> entry = nodes.ceilingEntry(hash);
+        Map.Entry<Integer, ServiceNode> entry = nodes.ceilingEntry(hash);
         if (entry == null) {
             entry = nodes.firstEntry();
         }

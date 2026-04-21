@@ -13,7 +13,7 @@ import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
 import com.pulsar.registry.Registry;
 import com.pulsar.registry.RegistryFactory;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationHandler;
@@ -36,13 +36,13 @@ public class ServiceProxy implements InvocationHandler {
                 RegistryFactory.getRegistry(applicationConfig.getRegistryConfig().getRegistry());
 
         String serviceName = method.getDeclaringClass().getName();
-        ServiceInstance serviceInstance = ServiceInstance.builder()
+        ServiceNode serviceNode = ServiceNode.builder()
                 .serviceName(serviceName)
                 .serviceVersion(applicationConfig.getVersion())
                 .build();
 
-        List<ServiceInstance> serviceInstances = registry.serviceDiscovery(serviceInstance.getServiceKey());
-        if (serviceInstances == null || serviceInstances.isEmpty()) {
+        List<ServiceNode> serviceNodes = registry.serviceDiscovery(serviceNode.getServiceKey());
+        if (serviceNodes == null || serviceNodes.isEmpty()) {
             throw new ServiceException("暂时无可用服务");
         }
 
@@ -51,7 +51,7 @@ public class ServiceProxy implements InvocationHandler {
         requestParams.put("address", applicationConfig.getServerHost() + ":" + applicationConfig.getServerPort());
 
         LoadBalancer loadBalancer = LoadBalancerFactory.getLoadBalancer(applicationConfig.getLoadBalancer());
-        ServiceInstance selectedService = loadBalancer.select(requestParams, serviceInstances);
+        ServiceNode selectedService = loadBalancer.select(requestParams, serviceNodes);
 
         RpcRequest rpcRequest = RpcRequest.builder()
                 .serviceName(serviceName)
@@ -74,7 +74,7 @@ public class ServiceProxy implements InvocationHandler {
             Map<String, Object> context = new HashMap<>();
             context.put("rpcRequest", rpcRequest);
             context.put("selectedService", selectedService);
-            context.put("serviceInstances", serviceInstances);
+            context.put("serviceNodes", serviceNodes);
 
             TolerantStrategy tolerantStrategy = TolerantStrategyFactory.getTolerantStrategy(applicationConfig.getTolerantStrategy());
             response = tolerantStrategy.doTolerant(context, e);

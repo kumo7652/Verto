@@ -1,8 +1,8 @@
 package com.pulsar.metadata;
 
 import com.pulsar.metadata.config.MetadataConfig;
-import com.pulsar.metadata.model.MethodMetadata;
-import com.pulsar.metadata.model.ServiceMetadata;
+import com.pulsar.model.MethodMetadata;
+import com.pulsar.model.ServiceMetadata;
 
 import java.util.List;
 
@@ -33,12 +33,12 @@ public interface MetadataCenter {
     /**
      * 存储方法元数据
      */
-    void storeMethod(MethodMetadata metadata);
+    void storeMethod(String serviceKey, MethodMetadata metadata);
 
     /**
      * 删除方法元数据
      */
-    void removeMethod(String serviceKey, String methodName);
+    void removeMethod(String serviceKey, String methodKey);
 
     /**
      * 获取服务的所有方法元数据

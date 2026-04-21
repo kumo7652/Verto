@@ -1,38 +1,62 @@
 package com.pulsar.registry;
 
+import com.pulsar.exception.RegistryException;
+import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.config.RegistryConfig;
-import com.pulsar.registry.model.ServiceInstance;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface Registry {
-    /**
-     * 初始化 —— 使框架连接到配置信息中的注册中心
-     */
-    void init(RegistryConfig registryConfig);
+    // ========== 生命周期 ==========
 
     /**
-     * 服务注册 —— 将服务实例注册到注册中心
+     * 初始化，建立连接
      */
-    void register(ServiceInstance serviceInstance) throws Exception;
+    void init(RegistryConfig config);
 
     /**
-     * 服务注销 —— 删除指定服务
-     */
-    void unregister(ServiceInstance serviceInstance) throws Exception;
-
-    /**
-     * 服务发现 —— 根据服务键查找服务实例列表
-     */
-    List<ServiceInstance> serviceDiscovery(String serviceKey);
-
-    /**
-     * 服务销毁
+     * 销毁，释放资源
      */
     void destroy();
 
+
+    // ========== 服务注册 ==========
+
     /**
-     * 服务监听 —— 根据服务在注册中心状态即时更新本地服务缓存
+     * 注册单个服务节点
      */
-    void watch(String serviceNodeKey);
+    void register(ServiceNode serviceNode) throws RegistryException;
+
+    /**
+     * 批量注册服务节点
+     */
+    default void registerBatch(List<ServiceNode> serviceNodes) throws RegistryException {}
+
+    /**
+     * 注销服务节点
+     */
+    void unregister(ServiceNode serviceNode) throws RegistryException;
+
+    // ========== 服务发现 ==========
+
+    /**
+     * 发现单个服务的所有节点
+     */
+    List<ServiceNode> discover(String serviceKey);
+
+    /**
+     * 批量发现多个服务
+     */
+    default Map<String, List<ServiceNode>> discoverBatch(List<String> serviceKeys){
+        return Collections.emptyMap();
+    }
+
+    /**
+     * 获取所有已注册的服务名
+     */
+    Set<String> getServices();
+
 }

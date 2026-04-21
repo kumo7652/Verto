@@ -4,10 +4,9 @@ import cn.hutool.core.util.IdUtil;
 import com.pulsar.RpcApplication;
 import com.pulsar.constant.NetworkConstant;
 import com.pulsar.constant.ProtocolConstant;
-import com.pulsar.exception.NetworkException;
 import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 import com.pulsar.server.BufferHandlerWrapper;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -170,7 +169,7 @@ public class VertxTcpClient {
         log.info("VertxTcpClient 连接池已关闭。");
     }
 
-    public RpcResponse sendRequest(RpcRequest request, ServiceInstance serviceInstance) throws Exception {
+    public RpcResponse sendRequest(RpcRequest request, ServiceNode serviceNode) throws Exception {
         CompletableFuture<RpcResponse> responseFuture = new CompletableFuture<>();
         long requestId = IdUtil.getSnowflakeNextId();
 
@@ -179,8 +178,8 @@ public class VertxTcpClient {
         responseFuture.whenComplete((res, ex) ->
                 requestWindow.remove(requestId));
 
-        String host = serviceInstance.getServiceHost();
-        int port = serviceInstance.getServicePort();
+        String host = serviceNode.getServiceHost();
+        int port = serviceNode.getServicePort();
         Future<NetSocket> connection = getConnection(host, port);
 
         connection.onSuccess(socket -> {

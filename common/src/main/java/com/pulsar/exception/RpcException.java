@@ -23,4 +23,17 @@ public class RpcException extends RuntimeException {
         this.code = errorCode.getCode();
         this.message = errorCode.getDefaultMessage();
     }
+
+    // 向后兼容：支持直接传入消息
+    public RpcException(String message) {
+        super(message);
+        this.code = RpcErrorCode.UNKNOWN_ERROR.getCode();
+        this.message = message;
+    }
+
+    public RpcException(String message, Throwable cause) {
+        super(message, cause);
+        this.code = RpcErrorCode.UNKNOWN_ERROR.getCode();
+        this.message = message;
+    }
 }

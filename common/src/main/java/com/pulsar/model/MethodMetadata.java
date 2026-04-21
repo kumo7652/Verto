@@ -1,4 +1,4 @@
-package com.pulsar.metadata.model;
+package com.pulsar.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,11 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MethodMetadata {
-    /**
-     * 服务键名
-     */
-    private String serviceKey;
-
     /**
      * 方法名称
      */

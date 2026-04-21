@@ -1,7 +1,6 @@
 package com.pulsar.protocol;
 
 import com.pulsar.constant.ProtocolConstant;
-import com.pulsar.exception.ProtocolException;
 import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
 import com.pulsar.serializer.Serializer;

@@ -7,7 +7,7 @@ import com.pulsar.registry.Registry;
 import com.pulsar.registry.RegistryFactory;
 import com.pulsar.registry.config.RegistryConfig;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import javax.annotation.Nonnull;
@@ -34,7 +34,7 @@ public class RpcProviderBootStrap implements BeanPostProcessor {
             ApplicationConfig applicationConfig = RpcApplication.getApplicationConfig();
             RegistryConfig registryConfig = applicationConfig.getRegistryConfig();
 
-            ServiceInstance serviceInstance = ServiceInstance.builder()
+            ServiceNode serviceNode = ServiceNode.builder()
                     .serviceName(serviceName)
                     .serviceVersion(serviceVersion)
                     .serviceHost(applicationConfig.getServerHost())
@@ -43,7 +43,7 @@ public class RpcProviderBootStrap implements BeanPostProcessor {
 
             Registry registry = RegistryFactory.getRegistry(registryConfig.getRegistry());
             try {
-                registry.register(serviceInstance);
+                registry.register(serviceNode);
             } catch (Exception e) {
                 throw new RuntimeException("注册中心注册失败" + e);
             }

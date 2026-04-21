@@ -4,12 +4,12 @@ import com.pulsar.RpcApplication;
 import com.pulsar.config.ApplicationConfig;
 import com.pulsar.metadata.MetadataCenter;
 import com.pulsar.metadata.MetadataCenterFactory;
-import com.pulsar.metadata.model.ServiceMetadata;
+import com.pulsar.model.ServiceMetadata;
+import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.Registry;
 import com.pulsar.registry.RegistryFactory;
 import com.pulsar.registry.config.RegistryConfig;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.registry.model.ServiceInstance;
 import com.pulsar.server.VertxTcpServer;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public class ProviderBootStrap {
         for (ServiceRegisterInfo service : serviceRegisterInfos) {
             String serviceName = service.getServiceName();
 
-            ServiceInstance serviceInstance = ServiceInstance.builder()
+            ServiceNode serviceNode = ServiceNode.builder()
                     .serviceName(serviceName)
                     .serviceHost(applicationConfig.getServerHost())
                     .servicePort(applicationConfig.getServerPort())
@@ -40,17 +40,16 @@ public class ProviderBootStrap {
                     .build();
 
             try {
-                registry.register(serviceInstance);
+                registry.register(serviceNode);
             } catch (Exception e) {
                 throw new RuntimeException("服务注册失败", e);
             }
 
             ServiceMetadata serviceMetadata = ServiceMetadata.builder()
-                    .serviceKey(serviceInstance.getServiceKey())
+                    .serviceKey(serviceNode.getServiceKey())
                     .serviceName(serviceName)
                     .serviceVersion(applicationConfig.getVersion())
-                    .serviceHost(applicationConfig.getServerHost())
-                    .servicePort(applicationConfig.getServerPort())
+                    .interfaceClass(service.getServiceInterface().getName())
                     .build();
             metadataCenter.storeService(serviceMetadata);
 

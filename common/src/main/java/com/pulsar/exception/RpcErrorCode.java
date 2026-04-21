@@ -19,9 +19,10 @@ public enum RpcErrorCode {
     MAGIC_NUMBER_MISMATCH(3002, "魔数不匹配"),
 
     // 注册中心错误 4000-4999
-    REGISTRY_FAILED(4000, "服务注册失败"),
+    REGISTER_FAILED(4000, "服务注册失败"),
     DISCOVERY_FAILED(4001, "服务发现失败"),
-    NO_AVAILABLE_SERVICE(4002, "暂无可用服务"),
+    UNREGISTER_FAILED(4002, "服务注销失败"),
+    NO_AVAILABLE_SERVICE(4003, "暂无可用服务"),
 
     // 业务错误 5000-5999（由业务方定义）
     ;

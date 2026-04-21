@@ -4,8 +4,8 @@ import cn.hutool.json.JSONUtil;
 import com.pulsar.extension.SpiExtension;
 import com.pulsar.metadata.MetadataCenter;
 import com.pulsar.metadata.config.MetadataConfig;
-import com.pulsar.metadata.model.MethodMetadata;
-import com.pulsar.metadata.model.ServiceMetadata;
+import com.pulsar.model.MethodMetadata;
+import com.pulsar.model.ServiceMetadata;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -47,13 +47,12 @@ public class RedisMetadataCenter implements MetadataCenter {
         RedisCommands<String, String> commands = connection.sync();
         String key = SERVICE_KEY_PREFIX + metadata.getServiceKey();
         Map<String, String> fields = Map.of(
-                "serviceKey", metadata.getServiceKey(),
+                "serviceKey", nullSafe(metadata.getServiceKey()),
                 "serviceName", nullSafe(metadata.getServiceName()),
                 "description", nullSafe(metadata.getDescription()),
                 "serviceVersion", nullSafe(metadata.getServiceVersion()),
                 "serviceGroup", nullSafe(metadata.getServiceGroup()),
-                "serviceHost", nullSafe(metadata.getServiceHost()),
-                "servicePort", nullSafe(metadata.getServicePort() != null ? metadata.getServicePort().toString() : "")
+                "interfaceClass", nullSafe(metadata.getInterfaceClass())
         );
         commands.hset(key, fields);
         log.debug("存储服务元数据: {}", metadata.getServiceKey());
@@ -88,39 +87,38 @@ public class RedisMetadataCenter implements MetadataCenter {
                 .description(fields.get("description"))
                 .serviceVersion(fields.get("serviceVersion"))
                 .serviceGroup(fields.get("serviceGroup"))
-                .serviceHost(fields.get("serviceHost"))
-                .servicePort(parseInteger(fields.get("servicePort")))
+                .interfaceClass(fields.get("interfaceClass"))
+                .methods(getMethods(serviceKey))
                 .build();
     }
 
     @Override
-    public void storeMethod(MethodMetadata metadata) {
+    public void storeMethod(String serviceKey, MethodMetadata metadata) {
         RedisCommands<String, String> commands = connection.sync();
-        String key = METHOD_KEY_PREFIX + metadata.getServiceKey() + ":" + metadata.getMethodKey();
+        String key = METHOD_KEY_PREFIX + serviceKey + ":" + metadata.getMethodKey();
 
         String paramTypesJson = metadata.getParameterTypes() != null
                 ? JSONUtil.toJsonStr(metadata.getParameterTypes())
                 : "[]";
 
         Map<String, String> fields = Map.of(
-                "serviceKey", metadata.getServiceKey(),
-                "methodName", metadata.getMethodName(),
+                "methodName", nullSafe(metadata.getMethodName()),
                 "parameterTypes", paramTypesJson,
                 "returnType", nullSafe(metadata.getReturnType()),
                 "description", nullSafe(metadata.getDescription())
         );
         commands.hset(key, fields);
-        log.debug("存储方法元数据: {}.{}", metadata.getServiceKey(), metadata.getMethodName());
+        log.debug("存储方法元数据: {}.{}", serviceKey, metadata.getMethodName());
     }
 
     @Override
-    public void removeMethod(String serviceKey, String methodName) {
+    public void removeMethod(String serviceKey, String methodKey) {
         RedisCommands<String, String> commands = connection.sync();
-        List<String> keys = commands.keys(METHOD_KEY_PREFIX + serviceKey + ":" + methodName + "*");
+        List<String> keys = commands.keys(METHOD_KEY_PREFIX + serviceKey + ":" + methodKey + "*");
         if (keys != null && !keys.isEmpty()) {
             commands.del(keys.toArray(new String[0]));
         }
-        log.debug("删除方法元数据: {}.{}", serviceKey, methodName);
+        log.debug("删除方法元数据: {}.{}", serviceKey, methodKey);
     }
 
     @Override
@@ -142,7 +140,6 @@ public class RedisMetadataCenter implements MetadataCenter {
                         : new String[0];
 
                 result.add(MethodMetadata.builder()
-                        .serviceKey(fields.get("serviceKey"))
                         .methodName(fields.get("methodName"))
                         .parameterTypes(paramTypes)
                         .returnType(fields.get("returnType"))
@@ -166,16 +163,5 @@ public class RedisMetadataCenter implements MetadataCenter {
 
     private String nullSafe(String value) {
         return value != null ? value : "";
-    }
-
-    private Integer parseInteger(String value) {
-        if (value == null || value.isEmpty()) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 }

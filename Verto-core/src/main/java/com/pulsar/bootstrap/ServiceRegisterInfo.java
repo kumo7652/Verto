@@ -17,7 +17,12 @@ public class ServiceRegisterInfo {
     private String serviceName;
 
     /**
+     * 服务接口类
+     */
+    private Class<?> serviceInterface;
+
+    /**
      * 实现类
      */
-    Class<?> implClass;
+    private Class<?> implClass;
 }

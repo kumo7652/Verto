@@ -5,7 +5,7 @@ import com.pulsar.registry.Registry;
 import com.pulsar.registry.RegistryFactory;
 import com.pulsar.registry.config.RegistryConfig;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 import com.pulsar.server.TcpServer;
 import com.pulsar.server.VertxTcpServer;
 
@@ -20,13 +20,13 @@ public class EasyProviderExample {
         RegistryConfig registryConfig = rpcConfig.getRegistryConfig();
 
         Registry registry = RegistryFactory.getRegistry(registryConfig.getRegistry());
-        ServiceInstance serviceInstance = ServiceInstance.builder()
+        ServiceNode serviceNode = ServiceNode.builder()
                 .serviceName(serviceName)
                 .serviceHost(rpcConfig.getServerHost())
                 .servicePort(rpcConfig.getServerPort())
                 .build();
         try {
-            registry.register(serviceInstance);
+            registry.register(serviceNode);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

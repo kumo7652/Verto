@@ -1,10 +1,10 @@
 package com.pulsar.loadbalancer;
 
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 
 import java.util.List;
 import java.util.Map;
 
 public interface LoadBalancer {
-    ServiceInstance select(Map<String, Object> requestParams, List<ServiceInstance> serviceInstances);
+    ServiceNode select(Map<String, Object> requestParams, List<ServiceNode> serviceNodes);
 }

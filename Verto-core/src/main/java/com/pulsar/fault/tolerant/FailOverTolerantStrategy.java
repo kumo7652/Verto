@@ -10,7 +10,7 @@ import com.pulsar.loadbalancer.LoadBalancer;
 import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
-import com.pulsar.registry.model.ServiceInstance;
+import com.pulsar.model.ServiceNode;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,38 +23,38 @@ public class FailOverTolerantStrategy implements TolerantStrategy {
     @SuppressWarnings("unchecked")
     public RpcResponse doTolerant(Map<String, Object> context, Exception e) {
         RpcRequest request = (RpcRequest) context.get("rpcRequest");
-        List<ServiceInstance> serviceInstances = (List<ServiceInstance>) context.get("serviceInstances");
-        ServiceInstance selectedService = (ServiceInstance) context.get("selectedService");
+        List<ServiceNode> serviceNodes = (List<ServiceNode>) context.get("serviceNodes");
+        ServiceNode selectedService = (ServiceNode) context.get("selectedService");
 
-        removeFailedService(selectedService, serviceInstances);
+        removeFailedService(selectedService, serviceNodes);
 
         ApplicationConfig applicationConfig = RpcApplication.getApplicationConfig();
 
-        while (serviceInstances != null && !serviceInstances.isEmpty()) {
+        while (serviceNodes != null && !serviceNodes.isEmpty()) {
             LoadBalancer loadBalancer = LoadBalancerFactory.getLoadBalancer(applicationConfig.getLoadBalancer());
             Map<String, Object> requestParams = new HashMap<>();
             requestParams.put("methodName", request.getMethodName());
 
-            ServiceInstance currentService = loadBalancer.select(requestParams, serviceInstances);
+            ServiceNode currentService = loadBalancer.select(requestParams, serviceNodes);
 
             try {
                 RetryStrategy retryStrategy = RetryStrategyFactory.getRetryStrategy(applicationConfig.getRetryStrategy());
                 VertxTcpClient client = VertxTcpClient.getInstance();
                 return retryStrategy.doRetry(() -> client.sendRequest(request, currentService));
             } catch (Exception exception) {
-                removeFailedService(currentService, serviceInstances);
+                removeFailedService(currentService, serviceNodes);
             }
         }
 
         throw new RuntimeException("暂时无可用服务");
     }
 
-    private void removeFailedService(ServiceInstance selectedService, List<ServiceInstance> serviceInstances) {
-        if (serviceInstances == null || serviceInstances.isEmpty()) {
+    private void removeFailedService(ServiceNode selectedService, List<ServiceNode> serviceNodes) {
+        if (serviceNodes == null || serviceNodes.isEmpty()) {
             return;
         }
 
-        serviceInstances.removeIf(service ->
+        serviceNodes.removeIf(service ->
             service.getServiceNodeKey().equals(selectedService.getServiceNodeKey())
         );
     }
