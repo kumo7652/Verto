@@ -28,7 +28,12 @@ public class RegistryConfig {
     private String password;
 
     /**
-     * 过期时间（ms）
+     * 连接超时时间（ms）
      */
-    private Long timeout = 10000L;
+    private Long connectTimeout = 5000L;
+
+    /**
+     * 请求超时时间（ms）
+     */
+    private Long requestTimeout = 10000L;
 }

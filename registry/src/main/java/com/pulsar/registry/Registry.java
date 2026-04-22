@@ -48,6 +48,11 @@ public interface Registry {
     List<ServiceNode> discover(String serviceKey);
 
     /**
+     * 订阅服务变更通知
+     */
+    void subscribe(String serviceKey, ServiceListener listener);
+
+    /**
      * 批量发现多个服务
      */
     default Map<String, List<ServiceNode>> discoverBatch(List<String> serviceKeys){

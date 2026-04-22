@@ -22,7 +22,8 @@ public enum RpcErrorCode {
     REGISTER_FAILED(4000, "服务注册失败"),
     DISCOVERY_FAILED(4001, "服务发现失败"),
     UNREGISTER_FAILED(4002, "服务注销失败"),
-    NO_AVAILABLE_SERVICE(4003, "暂无可用服务"),
+    RECONNECT_FAILED(4003, "服务续约失败"),
+    NO_AVAILABLE_SERVICE(4004, "暂无可用服务"),
 
     // 业务错误 5000-5999（由业务方定义）
     ;
