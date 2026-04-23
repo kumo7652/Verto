@@ -1,27 +1,27 @@
 package com.pulsar.loadbalancer;
 
 import com.pulsar.extension.SpiExtension;
+import com.pulsar.model.LoadBalancerContext;
 import com.pulsar.model.ServiceNode;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @SpiExtension(name = "random")
 public class RandomLoadBalancer implements LoadBalancer {
-    private final Random random = new Random();
 
     @Override
-    public ServiceNode select(Map<String, Object> requestParams, List<ServiceNode> serviceNodes) {
-        int size = serviceNodes.size();
-        if (size == 0) {
-            return null;
+    public Optional<ServiceNode> select(LoadBalancerContext context, List<ServiceNode> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            return Optional.empty();
         }
 
-        if (size == 1) {
-            return serviceNodes.get(0);
+        if (nodes.size() == 1) {
+            return Optional.of(nodes.get(0));
         }
 
-        return serviceNodes.get(random.nextInt(size));
+        return Optional.of(nodes.get(
+                ThreadLocalRandom.current().nextInt(nodes.size())));
     }
 }

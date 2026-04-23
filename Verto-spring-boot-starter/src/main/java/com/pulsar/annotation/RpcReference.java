@@ -3,7 +3,6 @@ package com.pulsar.annotation;
 import com.pulsar.constant.RpcConstant;
 import com.pulsar.fault.retry.RetryStrategyKeys;
 import com.pulsar.fault.tolerant.TolerantStrategyKeys;
-import com.pulsar.loadbalancer.LoadBalancerKeys;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
