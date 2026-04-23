@@ -1,6 +1,5 @@
 package com.pulsar.registry.etcd;
 
-import cn.hutool.core.collection.ConcurrentHashSet;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.pulsar.exception.RegistryException;
@@ -18,6 +17,7 @@ import io.etcd.jetcd.*;
 import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
 import io.etcd.jetcd.options.GetOption;
+import io.etcd.jetcd.support.CloseableClient;
 import io.grpc.stub.StreamObserver;
 import io.etcd.jetcd.options.PutOption;
 import io.etcd.jetcd.options.WatchOption;
@@ -33,9 +33,82 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * 基于 etcd 的注册中心实现
+ *
+ * <h2>etcd 数据模型</h2>
+ * <pre>
+ * Key:   /rpc/service/{serviceName}:{version}/{nodeId}
+ * Value: ServiceNode JSON（serviceName, version, host, port, nodeId）
+ * </pre>
+ * 每个 Key 绑定一个 Lease（TTL=30s），续约流中断后 Key 随租约过期自动删除，
+ * 实现"心跳停止即下线"的语义。
+ *
+ * <h2>核心流程</h2>
+ * <ul>
+ *   <li><b>注册</b>：Lease.grant → KV.put(lease) → Lease.keepAlive（双向流心跳）</li>
+ *   <li><b>注销</b>：移除 LeaseContext + 关闭续约流 → KV.delete</li>
+ *   <li><b>发现</b>：本地缓存优先 → 缓存未命中则 KV.get(prefix) → 写缓存 + 开启 Watch</li>
+ *   <li><b>订阅</b>：Watch 监听前缀变更 → 增量更新缓存 → 通知 ServiceListener</li>
+ * </ul>
+ *
+ * <h2>字段分类</h2>
+ * <ul>
+ *   <li><b>常量</b>：路径前缀、租约 TTL、重连退避参数等编译期常量</li>
+ *   <li><b>etcd 客户端</b>：Client / KV / Lease / Watch 四个子客户端</li>
+ *   <li><b>服务提供者字段</b>：节点 ID 计数器、租约上下文映射，服务于注册与续约</li>
+ *   <li><b>服务消费者字段</b>：本地缓存、Watch 管理、监听器映射，服务于发现与订阅</li>
+ *   <li><b>通用字段</b>：请求超时、重连线程池，注册与发现共用</li>
+ * </ul>
+ *
+ * <h2>多节点设计</h2>
+ * <p>虽然典型场景下单个服务提供者只注册一个 ServiceNode，但本实现使用 Map 结构
+ * （{@link #nodeLeases}、{@link #nodeIdCounters}）支持同一实例注册多个节点，覆盖以下场景：
+ * <ul>
+ *   <li>同一进程暴露多种协议（如 gRPC + HTTP），对应不同 ServiceNode</li>
+ *   <li>网关/聚合服务以多个 serviceName 注册</li>
+ *   <li>同一服务多版本并行（v1.0 与 v2.0 共存）</li>
+ * </ul>
+ *
+ * <h2>容错与重连</h2>
+ * <p>续约流断开时自动触发指数退避重连（2s → 4s → 8s → ... → 30s），
+ * 达到最大退避后最多重试 {@value #RECONNECT_MAX_ATTEMPTS} 次（约 5 分钟）。
+ * 每次重连执行完整的 re-register（重新申请租约 + 写 KV + 重启心跳），
+ * 由 {@link LeaseContext} 管理每个节点独立的退避状态和重连锁。
+ *
+ * <h2>线程安全</h2>
+ * <ul>
+ *   <li>{@link #nodeLeases}、{@link #serviceWatchers}、{@link #listeners} 使用 ConcurrentHashMap</li>
+ *   <li>{@link LeaseContext#reconnecting} 使用 CAS 保证同一节点只有一个线程执行重连</li>
+ *   <li>{@link WatchContext#reconnecting} 使用 CAS 保证同一服务 Watch 只有一个线程执行重连</li>
+ *   <li>续约回调（onNext/onError）由 jetcd 内部 gRPC 线程触发，重连调度到 {@link #reconnectExecutor}</li>
+ * </ul>
+ *
+ * @see Registry 注册中心接口
+ * @see LeaseContext 节点租约上下文
+ */
 @Slf4j
 @SpiExtension(name = "etcd")
 public class EtcdRegistry implements Registry {
+    // ==================== 常量 ====================
+
+    /** 服务注册根路径，所有服务节点的 Key 均以此为前缀 */
+    private static final String ETCD_ROOT_PATH = "/rpc/service/";
+
+    /** 默认租约 TTL（秒），节点无心跳则在此时间后自动过期删除 */
+    private static final long DEFAULT_LEASE_TTL = 30L;
+
+    /** 心跳续约失败后，重连初始延迟（毫秒） */
+    private static final long RECONNECT_INITIAL_DELAY_MS = 2000L;
+
+    /** 指数退避最大延迟（毫秒） */
+    private static final long RECONNECT_MAX_DELAY_MS = 30000L;
+
+    /** 指数退避乘数 */
+    private static final double RECONNECT_MULTIPLIER = 2.0;
+
+    /** 达到最大退避后的最大重连次数（30s × 10 = 5min） */
+    private static final int RECONNECT_MAX_ATTEMPTS = 10;
 
     // ==================== etcd 客户端 ====================
 
@@ -51,34 +124,7 @@ public class EtcdRegistry implements Registry {
     /** Watch 客户端，用于监听服务节点变更事件 */
     private volatile Watch watchClient;
 
-    // ==================== 路径与租约常量 ====================
-
-    /** 服务注册根路径，所有服务节点的 Key 均以此为前缀 */
-    private static final String ETCD_ROOT_PATH = "/rpc/service/";
-
-    /** 默认租约 TTL（秒），节点无心跳则在此时间后自动过期删除 */
-    private static final long DEFAULT_LEASE_TTL = 30L;
-
-    // ==================== 重连与退避参数 ====================
-
-    /** 心跳续约失败后，重连初始延迟（毫秒） */
-    private static final long RECONNECT_INITIAL_DELAY_MS = 2000L;
-
-    /** 指数退避最大延迟（毫秒） */
-    private static final long RECONNECT_MAX_DELAY_MS = 30000L;
-
-    /** 指数退避乘数 */
-    private static final double RECONNECT_MULTIPLIER = 2.0;
-
-    /** 最大重连次数 */
-    private static final int MAX_RECONNECT_ATTEMPTS = 3;
-
-    // ==================== 请求超时配置 ====================
-
-    /** etcd 请求超时时间（毫秒），用于 Future.get 的超时控制 */
-    private long requestTimeout;
-
-    // ==================== 节点 ID 生成 ====================
+    // ==================== 服务提供者使用字段 ====================
 
     /**
      * 按 serviceName 递增的计数器，用于自动生成 nodeId
@@ -87,55 +133,10 @@ public class EtcdRegistry implements Registry {
      */
     private final Map<String, AtomicLong> nodeIdCounters = new ConcurrentHashMap<>();
 
-    // ==================== 租约上下文 ====================
-
-    /**
-     * 每个服务节点的租约上下文
-     * <p>封装节点独立的 leaseId、退避参数和重连状态，避免全局共享导致的跨节点污染
-     */
-    private static class LeaseContext {
-        /** 当前有效的租约 ID，重注册成功后更新 */
-        volatile long leaseId;
-
-        /** 当前重连退避延迟（毫秒），初始 2000ms，每次失败翻倍，上限 30000ms，续约成功后重置 */
-        final AtomicLong backoffMs = new AtomicLong(RECONNECT_INITIAL_DELAY_MS);
-
-        /** 是否正在重连中，防止并发重注册 */
-        final AtomicBoolean reconnecting = new AtomicBoolean(false);
-
-        LeaseContext(long leaseId) {
-            this.leaseId = leaseId;
-        }
-
-        /** 重置退避为初始值 */
-        void resetBackoff() {
-            backoffMs.set(RECONNECT_INITIAL_DELAY_MS);
-        }
-
-        /** 退避翻倍，返回翻倍后的值 */
-        long BackOff() {
-            return backoffMs.updateAndGet(current ->
-                    Math.min(
-                            (long) (current * RECONNECT_MULTIPLIER),
-                            RECONNECT_MAX_DELAY_MS)
-                    );
-        }
-
-        /** 尝试进入重连状态，cas 保证只有一个线程执行重连 */
-        boolean tryEnterReconnect() {
-            return reconnecting.compareAndSet(false, true);
-        }
-
-        /** 退出重连状态 */
-        void exitReconnect() {
-            reconnecting.set(false);
-        }
-    }
-
     /** 节点租约上下文映射，Key 为 serviceNodeKey（如 order-service:1.0/order-001） */
     private final Map<String, LeaseContext> nodeLeases = new ConcurrentHashMap<>();
 
-    // ==================== 服务发现缓存 ====================
+    // ==================== 服务消费者使用字段 ====================
 
     /**
      * 服务节点本地缓存
@@ -144,22 +145,15 @@ public class EtcdRegistry implements Registry {
      */
     private final ServiceCache serviceCache = new DefaultServiceCache();
 
-    // ==================== Watch 订阅管理 ====================
-
     /**
-     * 正在监听的服务 Key 集合
-     * <p>用于防止对同一服务重复建立 Watch，元素为 serviceKey（如 order-service:1.0）
-     */
-    private final Set<String> watchingKeys = new ConcurrentHashSet<>();
-
-    /**
-     * 活跃的 Watch 对象映射
+     * Watch 上下文映射
      * <p>Key: serviceKey（如 order-service:1.0）
-     * <p>Value: Watch.Watcher 对象，用于关闭时释放资源
+     * <p>Value: 该服务的 Watch 生命周期上下文（watcher、退避状态、重连锁）
+     * <p>map 中存在条目即表示该服务正在监听或正在重连中，防止并发重复建 Watch
+     *
+     * @see WatchContext Watch 上下文
      */
-    private final Map<String, Watch.Watcher> watchers = new ConcurrentHashMap<>();
-
-    // ==================== 服务变更监听器 ====================
+    private final Map<String, WatchContext> serviceWatchers = new ConcurrentHashMap<>();
 
     /**
      * 服务变更监听器映射
@@ -168,14 +162,17 @@ public class EtcdRegistry implements Registry {
      */
     private final Map<String, Set<ServiceListener>> listeners = new ConcurrentHashMap<>();
 
-    // ==================== 异步调度线程池 ====================
+    // ==================== 通用字段 ====================
+
+    /** etcd 请求超时时间（毫秒），用于 Future.get 的超时控制 */
+    private long requestTimeout;
 
     /**
      * 重连/重试调度线程池，核心线程数 2
      * <p>用途：
      * <ol>
-     *   <li>心跳续约失败后的指数退避重连</li>
-     *   <li>Watch 断连后的重新订阅</li>
+     *   <li>心跳续约失败后的指数退避重连（服务提供者）</li>
+     *   <li>Watch 断连后的重新订阅（服务消费者）</li>
      * </ol>
      */
     private final ScheduledExecutorService reconnectExecutor = Executors.newScheduledThreadPool(2);
@@ -202,16 +199,30 @@ public class EtcdRegistry implements Registry {
 
     @Override
     public void destroy() {
-        // 关闭所有 Watch
-        watchers.forEach((key, watcher) -> {
+        // 关闭所有租约流并撤销所有租约
+        nodeLeases.forEach((node, context) -> {
             try {
-                watcher.close();
+                log.warn("关闭节点[{}]续约流", node);
+                context.keepAliveClient.close();
             } catch (Exception e) {
-                log.error("关闭 Watch[{}]失败", key, e);
+                log.error("关闭节点[{}]续约流失败", node, e);
+            }
+            leaseClient.revoke(context.leaseId);
+        });
+        nodeLeases.clear();
+
+        // 关闭所有监听流
+        serviceWatchers.forEach((service, context) -> {
+            try {
+                if (context.watcher != null) {
+                    log.warn("关闭对服务[{}]的监听", service);
+                    context.watcher.close();
+                }
+            } catch (Exception e) {
+                log.error("关闭对服务[{}]的监听失败", service, e);
             }
         });
-        watchers.clear();
-        watchingKeys.clear();
+        serviceWatchers.clear();
 
         // 关闭 etcd 客户端
         try {
@@ -291,6 +302,7 @@ public class EtcdRegistry implements Registry {
                     .get(requestTimeout, TimeUnit.MILLISECONDS).getID();
         } catch (Exception e) {
             log.error("register lease error", e);
+            nodeLeases.remove(serviceNode.getServiceNodeKey());
             throw new RegistryException(RpcErrorCode.REGISTER_FAILED,
                     "register lease failed: " + e.getMessage());
         }
@@ -312,11 +324,22 @@ public class EtcdRegistry implements Registry {
             kvClient.put(key, value, putOption).get(requestTimeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             log.error("register put error", e);
+            nodeLeases.remove(serviceNode.getServiceNodeKey());
             throw new RegistryException(RpcErrorCode.REGISTER_FAILED,
                     "register put failed: " + e.getMessage());
         }
 
-        // 开启服务续约
+        /* ========== 重连时，执行到这里代表重新注册成功 ========== */
+
+        // 关闭旧的租约续约流
+        if (context.keepAliveClient != null) {
+            context.keepAliveClient.close();
+        }
+
+        // 重置租约等待时间 - 重连时调用
+        context.resetBackoff();
+
+        // 开启新的续约流
         startKeepAlive(serviceNode, context);
     }
 
@@ -367,6 +390,16 @@ public class EtcdRegistry implements Registry {
         String serviceKey = ETCD_ROOT_PATH + serviceNode.getServiceNodeKey();
         ByteSequence key = ByteSequence.from(serviceKey, StandardCharsets.UTF_8);
 
+        // 移除租约上下文并关闭续约流
+        LeaseContext context = nodeLeases.remove(serviceNode.getServiceNodeKey());
+        if (context != null && context.keepAliveClient != null) {
+            try {
+                context.keepAliveClient.close();
+            } catch (Exception e) {
+                log.warn("关闭节点[{}]续约流失败", serviceNode.getServiceNodeKey(), e);
+            }
+        }
+
         // 删除节点
         try {
             kvClient.delete(key).get(requestTimeout, TimeUnit.MILLISECONDS);
@@ -375,9 +408,6 @@ public class EtcdRegistry implements Registry {
             throw new RegistryException(RpcErrorCode.UNREGISTER_FAILED,
                     "unregister service node failed: " + e.getMessage());
         }
-
-        // 移除租约
-        nodeLeases.remove(serviceNode.getServiceNodeKey());
     }
 
     // ==================== 服务发现 ====================
@@ -474,91 +504,31 @@ public class EtcdRegistry implements Registry {
      */
     @Override
     public Set<String> getServices() {
-        return Set.of();
+        return new HashSet<>(serviceWatchers.keySet());
     }
 
     // ==================== 私有辅助方法 ====================
 
     /**
      * 启动租约心跳续约
-     *
      * <p>通过 gRPC 双向流保持心跳，确保租约不会过期。
-     * 当心跳续约失败时，触发指数退避重连机制。
-     *
-     * <h3>心跳机制</h3>
-     * <ul>
-     *   <li>etcd 会在租约 TTL 的 1/3 时间发送续约请求</li>
-     *   <li>默认 TTL=30s，约每 10s 续约一次</li>
-     *   <li>续约成功时 onNext 回调，返回新的 TTL</li>
-     * </ul>
-     *
-     * <h3>指数退避重连</h3>
-     * <ul>
-     *   <li>初始延迟：2s</li>
-     *   <li>每次失败翻倍：2s → 4s → 8s → ... → 30s（上限）</li>
-     *   <li>重连成功后重置为初始值</li>
-     * </ul>
+     * 续约失败时委托给 {@link #scheduleReconnect} 处理重连。
      *
      * @param serviceNode 服务节点，用于重连时重新注册
-     * @param context 租约信息
+     * @param context 租约上下文
      */
     private void startKeepAlive(ServiceNode serviceNode, LeaseContext context) {
-        long leaseId = context.leaseId;
-
-        leaseClient.keepAlive(leaseId, new StreamObserver<>() {
-            final AtomicInteger reconnectCount = new AtomicInteger(0);
-
-            // 成功续约，重置延迟
+        context.keepAliveClient = leaseClient.keepAlive(context.leaseId, new StreamObserver<>() {
             @Override
             public void onNext(LeaseKeepAliveResponse response) {
-                context.resetBackoff();
                 log.debug("节点[{}]续约成功, TTL: {}s",
                         serviceNode.getServiceNodeKey(), response.getTTL());
             }
 
-            // 续约失败 —— 可能是网络问题，可能是节点问题
             @Override
             public void onError(Throwable t) {
-                log.error("节点[{}]续约失败，{}后尝试重新注册",
-                        serviceNode.getServiceNodeKey(), context.backoffMs + "ms");
-
-                // 尝试对网络问题进行修复
-                Runnable reconnect = () -> {
-                    try {
-                        log.info("正在为节点[{}]进行故障恢复（重新注册）...",
-                                serviceNode.getServiceNodeKey());
-                        if (context.tryEnterReconnect()) {
-                            doRegister(serviceNode, context);
-                        }
-                        log.info("节点[{}]故障恢复成功！", serviceNode.getServiceNodeKey());
-                    } catch (Exception e) {
-                        log.error("节点[{}]故障恢复失败，将继续重试",
-                                serviceNode.getServiceNodeKey(), e);
-
-                        // 指数退避：延迟翻倍，上限 30s
-                        long delay = context.BackOff();
-                        log.warn("当前节点重试延迟：{}", delay);
-
-                        if (delay == RECONNECT_MAX_DELAY_MS) {
-                            if (reconnectCount.incrementAndGet() > MAX_RECONNECT_ATTEMPTS) {
-                                nodeLeases.remove(serviceNode.getServiceNodeKey());
-                                throw new RegistryException(
-                                        RpcErrorCode.RECONNECT_FAILED,
-                                        "reached max reconnect attempts, " +
-                                                "check node or registry status\n" +
-                                                "error detail: " +
-                                        e.getMessage());
-                            }
-                        }
-
-                        // 递归调用自身，继续重试
-                        startKeepAlive(serviceNode, context);
-                    } finally {
-                        context.exitReconnect();
-                    }
-                };
-                long delay = context.backoffMs.get();
-                reconnectExecutor.schedule(reconnect, delay, TimeUnit.MILLISECONDS);
+                log.error("节点[{}]续约失败", serviceNode.getServiceNodeKey(), t);
+                scheduleReconnect(serviceNode, context, new AtomicInteger(0));
             }
 
             @Override
@@ -566,6 +536,54 @@ public class EtcdRegistry implements Registry {
                 log.info("节点[{}]续约流关闭", serviceNode.getServiceNodeKey());
             }
         });
+    }
+
+    /**
+     * 调度续约重连任务
+     * <p>延迟调度一次重连尝试，失败后递归调度自身继续重试。
+     *
+     * @param serviceNode 服务节点
+     * @param context 租约上下文
+     * @param reconnectCount 已达最大退避的重试次数
+     */
+    private void scheduleReconnect(ServiceNode serviceNode, LeaseContext context, AtomicInteger reconnectCount) {
+        reconnectExecutor.schedule(() -> {
+            // 每次重连都检查节点是否已经下线
+            if (!nodeLeases.containsKey(serviceNode.getServiceNodeKey())) {
+                log.info("节点[{}]已注销，跳过续约重连", serviceNode.getServiceNodeKey());
+                return;
+            }
+
+            // 另一线程正在重连，无需重复调度
+            if (!context.tryEnterReconnect()) {
+                return;
+            }
+
+            // 尝试重连 - 重新注册
+            try {
+                log.info("正在为节点[{}]进行故障恢复（重新注册）...",
+                        serviceNode.getServiceNodeKey());
+                doRegister(serviceNode, context);
+                log.info("节点[{}]故障恢复成功！", serviceNode.getServiceNodeKey());
+            } catch (Exception e) {
+                log.error("节点[{}]故障恢复失败，将继续重试", serviceNode.getServiceNodeKey(), e);
+
+                long delay = context.Backoff();
+                log.warn("当前节点重试延迟：{}", delay);
+
+                if (delay == RECONNECT_MAX_DELAY_MS
+                        && reconnectCount.incrementAndGet() > RECONNECT_MAX_ATTEMPTS) {
+                    nodeLeases.remove(serviceNode.getServiceNodeKey());
+                    log.error("节点[{}]达到最大重连次数，放弃重连", serviceNode.getServiceNodeKey());
+                    return;
+                }
+
+                context.exitReconnect();
+                scheduleReconnect(serviceNode, context, reconnectCount);
+                return;
+            }
+            context.exitReconnect();
+        }, context.backoffMs.get(), TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -582,11 +600,50 @@ public class EtcdRegistry implements Registry {
     }
 
     /**
+     * 调度 Watch 重新订阅任务
+     * <p>延迟调度一次重新订阅，失败后递归调度自身继续重试。
+     * 达到最大退避后最多重试 {@value #RECONNECT_MAX_ATTEMPTS} 次，超过则放弃。
+     *
+     * @param serviceKey 服务标识
+     * @param delay 本次调度延迟（毫秒）
+     * @param retryCount 已达最大退避的重试次数
+     */
+    private void scheduleWatchReconnect(String serviceKey, long delay, AtomicInteger retryCount) {
+        reconnectExecutor.schedule(() -> {
+            WatchContext context = serviceWatchers.get(serviceKey);
+            if (context == null) {
+                return;
+            }
+
+            try {
+                log.info("正在重新订阅 Watch[{}]", serviceKey);
+                startWatch(serviceKey);
+                context.exitReconnect();
+                log.info("Watch[{}]重新订阅成功", serviceKey);
+            } catch (Exception e) {
+                log.error("Watch[{}]重新订阅失败", serviceKey, e);
+
+                long nextDelay = context.backoff();
+                if (nextDelay == RECONNECT_MAX_DELAY_MS
+                        && retryCount.incrementAndGet() > RECONNECT_MAX_ATTEMPTS) {
+                    log.error("Watch[{}]达到最大重试次数，放弃重新订阅", serviceKey);
+                    serviceWatchers.remove(serviceKey);
+                    context.exitReconnect();
+                    return;
+                }
+
+                context.exitReconnect();
+                scheduleWatchReconnect(serviceKey, nextDelay, retryCount);
+            }
+        }, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
      * 确保对指定 serviceKey 开启了 Watch 监听
      * 使用 watchingKeys 防止重复建立 Watch
      */
     private void ensureWatching(String serviceKey) {
-        if (watchingKeys.add(serviceKey)) {
+        if (serviceWatchers.putIfAbsent(serviceKey, new WatchContext()) == null) {
             startWatch(serviceKey);
         }
     }
@@ -603,6 +660,11 @@ public class EtcdRegistry implements Registry {
      * <p>Watch 断连后通过 reconnectExecutor 自动重新订阅
      */
     private void startWatch(String serviceKey) {
+        WatchContext context = serviceWatchers.get(serviceKey);
+        if (context == null) {
+            return;
+        }
+
         ByteSequence prefixKey = ByteSequence.from(
                 ETCD_ROOT_PATH + serviceKey + "/", StandardCharsets.UTF_8);
         WatchOption watchOption = WatchOption.builder()
@@ -610,7 +672,7 @@ public class EtcdRegistry implements Registry {
                 .withPrevKV(true)
                 .build();
 
-        Watch.Watcher watcher = watchClient.watch(prefixKey, watchOption, new Watch.Listener() {
+        context.watcher = watchClient.watch(prefixKey, watchOption, new Watch.Listener() {
             @Override
             public void onNext(WatchResponse response) {
                 for (WatchEvent event : response.getEvents()) {
@@ -621,23 +683,24 @@ public class EtcdRegistry implements Registry {
             @Override
             public void onError(Throwable throwable) {
                 log.error("Watch[{}]连接异常，将尝试重新订阅", serviceKey, throwable);
-                watchingKeys.remove(serviceKey);
-                watchers.remove(serviceKey);
-                reconnectExecutor.schedule(() -> {
-                    log.info("正在重新订阅 Watch[{}]", serviceKey);
-                    ensureWatching(serviceKey);
-                }, RECONNECT_INITIAL_DELAY_MS, TimeUnit.MILLISECONDS);
+                context.watcher = null;
+
+                if (!context.tryEnterReconnect()) {
+                    return;
+                }
+
+                long usedDelay = context.backoff();
+                scheduleWatchReconnect(serviceKey, usedDelay, new AtomicInteger(0));
             }
 
             @Override
             public void onCompleted() {
                 log.info("Watch[{}]流关闭", serviceKey);
-                watchingKeys.remove(serviceKey);
-                watchers.remove(serviceKey);
+                context.watcher = null;
             }
         });
 
-        watchers.put(serviceKey, watcher);
+        context.resetBackoff();
         log.info("已开启 Watch 监听: {}", serviceKey);
     }
 
@@ -703,6 +766,95 @@ public class EtcdRegistry implements Registry {
             } catch (Exception e) {
                 log.error("监听器回调异常, serviceKey: {}", serviceKey, e);
             }
+        }
+    }
+
+    // ==================== 租约上下文 ====================
+
+    /**
+     * 每个服务节点的租约上下文
+     * <p>封装节点独立的 leaseId、退避参数和重连状态，避免全局共享导致的跨节点污染
+     *
+     * @see WatchContext 结构类似的租约上下文
+     */
+    private static class LeaseContext {
+        /**当前有效的租约 ID，重注册成功后更新 */
+        volatile long leaseId;
+
+        /** 当前重连退避延迟（毫秒），初始 2000ms，每次失败翻倍，上限 30000ms，续约成功后重置 */
+        final AtomicLong backoffMs = new AtomicLong(RECONNECT_INITIAL_DELAY_MS);
+
+        /** 是否正在重连中，防止并发重注册 */
+        final AtomicBoolean reconnecting = new AtomicBoolean(false);
+
+        /** keepAlive 返回的 CloseableClient，close 即停止续约流 */
+        volatile CloseableClient keepAliveClient;
+
+        LeaseContext(long leaseId) {
+            this.leaseId = leaseId;
+        }
+
+        /** 重置退避为初始值 */
+        void resetBackoff() {
+            backoffMs.set(RECONNECT_INITIAL_DELAY_MS);
+        }
+
+        /** 退避翻倍，返回翻倍后的值 */
+        long Backoff() {
+            return backoffMs.updateAndGet(current ->
+                    Math.min((long) (current * RECONNECT_MULTIPLIER), RECONNECT_MAX_DELAY_MS)
+            );
+        }
+
+        /** 尝试进入重连状态，cas 保证只有一个线程执行重连 */
+        boolean tryEnterReconnect() {
+            return reconnecting.compareAndSet(false, true);
+        }
+
+        /** 退出重连状态 */
+        void exitReconnect() {
+            reconnecting.set(false);
+        }
+    }
+
+    // ==================== 监听上下文 ====================
+
+    /**
+     * 每个服务的 Watch 生命周期上下文
+     * <p>封装服务独立的 watcher、退避参数和重连状态，避免全局共享导致的跨服务污染
+     *
+     * @see LeaseContext 结构类似的租约上下文
+     */
+    private static class WatchContext {
+        /** 当前活跃的 Watcher 对象，为 null 表示已断连或未建立 */
+        volatile Watch.Watcher watcher;
+
+        /** 当前重连退避延迟（毫秒），初始 {@link #RECONNECT_INITIAL_DELAY_MS}，每次失败翻倍，上限 {@link #RECONNECT_MAX_DELAY_MS} */
+        final AtomicLong backoffMs = new AtomicLong(RECONNECT_INITIAL_DELAY_MS);
+
+        /** 是否正在重连中，CAS 保证同一服务只有一个线程执行 Watch 重连 */
+        final AtomicBoolean reconnecting = new AtomicBoolean(false);
+
+        /** 重置退避为初始值 */
+        void resetBackoff() {
+            backoffMs.set(RECONNECT_INITIAL_DELAY_MS);
+        }
+
+        /** 退避翻倍，返回翻倍前的值（本次使用的延迟） */
+        long backoff() {
+            return backoffMs.getAndUpdate(current ->
+                    Math.min((long) (current * RECONNECT_MULTIPLIER), RECONNECT_MAX_DELAY_MS)
+            );
+        }
+
+        /** 尝试进入重连状态，CAS 保证只有一个线程执行重连 */
+        boolean tryEnterReconnect() {
+            return reconnecting.compareAndSet(false, true);
+        }
+
+        /** 退出重连状态 */
+        void exitReconnect() {
+            reconnecting.set(false);
         }
     }
 }
