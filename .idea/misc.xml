@@ -5,31 +5,8 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
-        <option value="$PROJECT_DIR$/common/pom.xml" />
-        <option value="$PROJECT_DIR$/consumer/pom.xml" />
-        <option value="$PROJECT_DIR$/provider/pom.xml" />
-        <option value="$PROJECT_DIR$/my_rpc-core/pom.xml" />
-        <option value="$PROJECT_DIR$/my_rpc-easy/pom.xml" />
-        <option value="$PROJECT_DIR$/rpc-spring-boot-starter/pom.xml" />
-        <option value="$PROJECT_DIR$/my_rpc-registry/pom.xml" />
-        <option value="$PROJECT_DIR$/Verto-core/pom.xml" />
-        <option value="$PROJECT_DIR$/registry/pom.xml" />
-        <option value="$PROJECT_DIR$/protocol/pom.xml" />
-        <option value="$PROJECT_DIR$/Verto-spring-boot-starter/pom.xml" />
-        <option value="$PROJECT_DIR$/transport/pom.xml" />
-        <option value="$PROJECT_DIR$/resilience/pom.xml" />
-        <option value="$PROJECT_DIR$/loadbalance/pom.xml" />
-        <option value="$PROJECT_DIR$/serializer/pom.xml" />
-        <option value="$PROJECT_DIR$/loadbalancer/pom.xml" />
       </list>
     </option>
-    <option name="ignoredFiles">
-      <set>
-        <option value="$PROJECT_DIR$/my_rpc-easy/pom.xml" />
-      </set>
-    </option>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK">
-    <output url="file://$PROJECT_DIR$/out" />
-  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" project-jdk-name="17" project-jdk-type="JavaSDK" />
 </project>

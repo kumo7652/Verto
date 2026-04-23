@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="重构负载均衡接口并实现随机、轮询两种负载均衡器">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/config/ApplicationConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/config/ApplicationConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/UserService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/utils/ThreadPoolFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/consumer/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/consumer/src/main/java/com/pulsar/EasyConsumerExample.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/provider/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/provider/src/main/java/com/pulsar/EasyProviderExample.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/provider/src/main/java/com/pulsar/UserServiceImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistry.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/serializer/src/main/java/com/pulsar/serializer/SerializerKeys.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="AnnotationType" />
+        <option value="Interface" />
+        <option value="Enum" />
+        <option value="Exception" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="userSettingsFile" value="D:\apache-maven-3.9.6\apache-maven-3.9.6\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+    <option name="explicitlyDisabledProfiles" value="jdk-1.8" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3AFqbfDc1QkrVVwYrbxHk8f8oVX" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="sortByType" value="true" />
+    <option name="sortKey" value="BY_TYPE" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;JUnit.ProtocolMessageTest.testEncodeAndDecode.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.RegistryTest.register.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RegistryTest.serviceDiscovery.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.RegistryTest.testHeartBeat.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RegistryTest.unRegister.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:help].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Codes/Java/Verto&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;D:/Codes/Java/Verto/serializer/src/main/java/com/example/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
+    &quot;应用程序.EasyConsumerExample.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.EasyProviderExample.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.EtcdRegistry.executor&quot;: &quot;Debug&quot;,
+    &quot;应用程序.Main.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.MessageDecoder.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.VertxTcpClient.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.VertxTcpServer.executor&quot;: &quot;Run&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/新建临时文件&quot;: [
+      &quot;IgnoreLang&quot;
+    ]
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Codes\Java\Verto\loadbalancer\src\main\resources" />
+      <recent name="D:\Codes\Java\Verto\resilience\src\main\resources" />
+      <recent name="D:\Codes\Java\Verto\registry\src\main\resources\META-INF" />
+      <recent name="D:\Codes\Java\Verto\serializer\src\main\resources\META-INF" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Codes\Java\Verto\loadbalancer\src\main\resources\META-INF\rpc" />
+      <recent name="D:\Codes\Java\Verto\resilience\src\main\resources\META-INF\rpc" />
+      <recent name="D:\Codes\Java\Verto\Verto-core\src\main\resources\META-INF\rpc\system" />
+      <recent name="D:\Codes\Java\Verto\serializer\src\main\resources\META-INF\rpc\system" />
+      <recent name="D:\Codes\Java\Verto\serializer\src\main\resources" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.example.utils" />
+    </key>
+  </component>
+  <component name="RunManager" selected="应用程序.EasyConsumerExample">
+    <configuration default="true" type="Application" factoryName="Application">
+      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EasyConsumerExample" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.EasyConsumerExample" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.pulsar.annotation.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EasyProviderExample" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.EasyProviderExample" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.pulsar.annotation.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="VertxTcpServer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="MAIN_CLASS_NAME" value="com.example.server.tcp.VertxTcpServer" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.example.server.tcp.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="Java Scratch">
+      <shortenClasspath name="NONE" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="my_rpc" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="my_rpc" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="MavenRunConfiguration" factoryName="Maven">
+      <MavenSettings>
+        <option name="myGeneralSettings" />
+        <option name="myRunnerSettings" />
+        <option name="myRunnerParameters">
+          <MavenRunnerParameters>
+            <option name="cmdOptions" />
+            <option name="profiles">
+              <set />
+            </option>
+            <option name="goals">
+              <list />
+            </option>
+            <option name="multimoduleDir" />
+            <option name="pomFileName" />
+            <option name="profilesMap">
+              <map />
+            </option>
+            <option name="projectsCmdOptionValues">
+              <list />
+            </option>
+            <option name="resolveToWorkspace" value="false" />
+            <option name="workingDirPath" value="$PROJECT_DIR$" />
+          </MavenRunnerParameters>
+        </option>
+      </MavenSettings>
+      <method v="2" />
+    </configuration>
+    <configuration name="RpcSpringBootStarterApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="Verto-spring-boot-starter" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.rpcspringbootstarter.RpcSpringBootStarterApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <option name="SPRING_BOOT_MAIN_CLASS" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="lua.app" factoryName="Lua Application">
+      <option name="program" value="lua.exe" />
+      <option name="file" value="" />
+      <option name="workingDir" value="$PROJECT_DIR$/src/main/java" />
+      <option name="debuggerType" value="1" />
+      <option name="params" value="" />
+      <option name="charset" value="UTF-8" />
+      <option name="showConsole" value="true" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Spring Boot.RpcSpringBootStarterApplication" />
+      <item itemvalue="应用程序.EasyConsumerExample" />
+      <item itemvalue="应用程序.EasyProviderExample" />
+      <item itemvalue="应用程序.VertxTcpServer" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="应用程序.EasyConsumerExample" />
+        <item itemvalue="应用程序.EasyProviderExample" />
+        <item itemvalue="应用程序.VertxTcpServer" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26830.84" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.26830.84" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="" />
+      <created>1772198739883</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1772198739883</updated>
+      <workItem from="1772198741236" duration="94000" />
+      <workItem from="1772198871859" duration="18000" />
+      <workItem from="1772198916112" duration="53000" />
+      <workItem from="1772198982008" duration="6000" />
+      <workItem from="1772199004973" duration="28000" />
+      <workItem from="1772199049920" duration="28000" />
+      <workItem from="1772199085817" duration="29000" />
+      <workItem from="1772199120348" duration="73000" />
+      <workItem from="1772199212697" duration="9000" />
+      <workItem from="1772199231655" duration="59000" />
+      <workItem from="1772199308026" duration="284000" />
+      <workItem from="1772199611313" duration="88000" />
+      <workItem from="1772199732371" duration="43000" />
+      <workItem from="1772199782581" duration="903000" />
+      <workItem from="1772200712664" duration="10000" />
+      <workItem from="1772200730110" duration="4650000" />
+      <workItem from="1772251319602" duration="10436000" />
+      <workItem from="1772286890708" duration="719000" />
+      <workItem from="1772287653494" duration="1361000" />
+      <workItem from="1772289039366" duration="2044000" />
+      <workItem from="1772435775176" duration="1888000" />
+      <workItem from="1772440941773" duration="540000" />
+      <workItem from="1772528418733" duration="4677000" />
+      <workItem from="1772634231271" duration="1405000" />
+      <workItem from="1772636137823" duration="266000" />
+      <workItem from="1772636417418" duration="156000" />
+      <workItem from="1772636609004" duration="554000" />
+      <workItem from="1772675497226" duration="68000" />
+      <workItem from="1772675578415" duration="72000" />
+      <workItem from="1772675666667" duration="237000" />
+      <workItem from="1772675918768" duration="381000" />
+      <workItem from="1772676325396" duration="151000" />
+      <workItem from="1772676493852" duration="69000" />
+      <workItem from="1772676599660" duration="623000" />
+      <workItem from="1772677238927" duration="396000" />
+      <workItem from="1772677661355" duration="3609000" />
+      <workItem from="1772693645195" duration="4669000" />
+      <workItem from="1772699798269" duration="9090000" />
+      <workItem from="1772764229356" duration="3380000" />
+      <workItem from="1772768241381" duration="2546000" />
+      <workItem from="1772778515640" duration="109000" />
+      <workItem from="1772778645717" duration="355000" />
+      <workItem from="1772779024987" duration="989000" />
+      <workItem from="1772780106446" duration="6350000" />
+      <workItem from="1772800689193" duration="4589000" />
+      <workItem from="1772809917214" duration="3536000" />
+      <workItem from="1772813529436" duration="1039000" />
+      <workItem from="1772859209436" duration="1407000" />
+      <workItem from="1772949887823" duration="2359000" />
+      <workItem from="1772952340408" duration="20000" />
+      <workItem from="1772952373270" duration="8593000" />
+      <workItem from="1772975121479" duration="4225000" />
+      <workItem from="1773029497949" duration="4380000" />
+      <workItem from="1773037586197" duration="14193000" />
+      <workItem from="1773112666810" duration="5498000" />
+      <workItem from="1773126951399" duration="5173000" />
+      <workItem from="1773132371508" duration="6153000" />
+      <workItem from="1773210920172" duration="2302000" />
+      <workItem from="1773213272167" duration="5880000" />
+      <workItem from="1773221393394" duration="30000" />
+      <workItem from="1773221429514" duration="1262000" />
+      <workItem from="1773222719295" duration="11000" />
+      <workItem from="1773222758043" duration="59000" />
+      <workItem from="1773222831705" duration="14000" />
+      <workItem from="1773222876767" duration="70000" />
+      <workItem from="1773222956922" duration="105000" />
+      <workItem from="1773223069749" duration="357000" />
+      <workItem from="1773233832914" duration="409000" />
+      <workItem from="1773237698260" duration="2848000" />
+      <workItem from="1773287028288" duration="4883000" />
+      <workItem from="1773299292326" duration="9928000" />
+      <workItem from="1773382593760" duration="8000" />
+      <workItem from="1773386226824" duration="330000" />
+      <workItem from="1773391278809" duration="1823000" />
+      <workItem from="1773393145839" duration="7234000" />
+      <workItem from="1773459016449" duration="2268000" />
+      <workItem from="1773469065792" duration="2943000" />
+      <workItem from="1773749849028" duration="1343000" />
+      <workItem from="1773808295108" duration="2484000" />
+      <workItem from="1773987082048" duration="4086000" />
+      <workItem from="1773991228048" duration="11993000" />
+      <workItem from="1774074965408" duration="3154000" />
+      <workItem from="1774161031628" duration="92000" />
+      <workItem from="1774161155985" duration="2169000" />
+      <workItem from="1774339361269" duration="2889000" />
+      <workItem from="1774359611070" duration="1951000" />
+      <workItem from="1774405380116" duration="3000" />
+      <workItem from="1774407488827" duration="10000" />
+      <workItem from="1774948217583" duration="1264000" />
+      <workItem from="1775379628843" duration="17180000" />
+      <workItem from="1775444880951" duration="19198000" />
+      <workItem from="1775486158235" duration="1279000" />
+      <workItem from="1775545378634" duration="4000" />
+      <workItem from="1775632676061" duration="3436000" />
+      <workItem from="1775641925001" duration="2016000" />
+      <workItem from="1775702142838" duration="2000" />
+      <workItem from="1775811289900" duration="1317000" />
+      <workItem from="1776439857705" duration="4000" />
+      <workItem from="1776511457172" duration="457000" />
+      <workItem from="1776511928220" duration="128000" />
+      <workItem from="1776512073355" duration="404000" />
+      <workItem from="1776512496869" duration="466000" />
+      <workItem from="1776512999537" duration="259000" />
+      <workItem from="1776513275375" duration="351000" />
+      <workItem from="1776513654365" duration="919000" />
+      <workItem from="1776514946464" duration="432000" />
+      <workItem from="1776515396008" duration="8472000" />
+      <workItem from="1776526059058" duration="6386000" />
+      <workItem from="1776566522794" duration="83000" />
+      <workItem from="1776582319850" duration="827000" />
+      <workItem from="1776583543709" duration="5087000" />
+      <workItem from="1776606607531" duration="4579000" />
+      <workItem from="1776655555732" duration="3862000" />
+      <workItem from="1776673418639" duration="5768000" />
+      <workItem from="1776679648202" duration="252000" />
+      <workItem from="1776679912929" duration="116000" />
+      <workItem from="1776680072124" duration="4808000" />
+      <workItem from="1776690289118" duration="6934000" />
+      <workItem from="1776746981579" duration="8412000" />
+      <workItem from="1776758699471" duration="16488000" />
+      <workItem from="1776827329946" duration="1790000" />
+      <workItem from="1776829196023" duration="10202000" />
+      <workItem from="1776846929123" duration="13381000" />
+      <workItem from="1776912738939" duration="9694000" />
+      <workItem from="1776946816063" duration="8366000" />
+      <workItem from="1777007510532" duration="131000" />
+      <workItem from="1777007661090" duration="10127000" />
+      <workItem from="1777033882502" duration="60000" />
+      <workItem from="1777033960225" duration="1918000" />
+      <workItem from="1777036252170" duration="2199000" />
+      <workItem from="1777038604307" duration="5896000" />
+      <workItem from="1777086843582" duration="1375000" />
+    </task>
+    <task id="LOCAL-00001" summary="初始项目结构定义">
+      <option name="closed" value="true" />
+      <created>1776588568854</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1776588568854</updated>
+    </task>
+    <task id="LOCAL-00002" summary="初步抽取core模块并完善部分功能">
+      <option name="closed" value="true" />
+      <created>1776680230782</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776680230782</updated>
+    </task>
+    <task id="LOCAL-00003" summary="初步抽取core模块并完善部分功能">
+      <option name="closed" value="true" />
+      <created>1776680248077</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776680248077</updated>
+    </task>
+    <task id="LOCAL-00004" summary="初步完善注册中心功能">
+      <option name="closed" value="true" />
+      <created>1776764522990</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1776764522990</updated>
+    </task>
+    <task id="LOCAL-00005" summary="尝试修复服务发现、服务续约功能">
+      <option name="closed" value="true" />
+      <created>1776843895932</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776843895932</updated>
+    </task>
+    <task id="LOCAL-00006" summary="注册中心完整代码">
+      <option name="closed" value="true" />
+      <created>1776939158543</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1776939158543</updated>
+    </task>
+    <task id="LOCAL-00007" summary="重构负载均衡接口并实现随机、轮询两种负载均衡器">
+      <option name="closed" value="true" />
+      <created>1776957221588</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1776957221589</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="f9c4ef37-1ae5-4118-bf30-fb7b1187445b" value="TOOL_WINDOW" />
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+        <entry key="f9c4ef37-1ae5-4118-bf30-fb7b1187445b">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="structure">
+                    <value>
+                      <list>
+                        <option value="dir:D:/Codes/Java/Verto/consumer" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="初始项目结构定义" />
+    <MESSAGE value="初步抽取core模块并完善部分功能" />
+    <MESSAGE value="初步完善注册中心功能" />
+    <MESSAGE value="尝试修复服务发现、服务续约功能" />
+    <MESSAGE value="注册中心完整代码" />
+    <MESSAGE value="重构负载均衡接口并实现随机、轮询两种负载均衡器" />
+    <option name="LAST_COMMIT_MESSAGE" value="重构负载均衡接口并实现随机、轮询两种负载均衡器" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/example/Main.java</url>
+          <line>13</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/consumer/src/main/java/com/pulsar/Main.java</url>
+          <line>13</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/transport/src/main/java/com/pulsar/Main.java</url>
+          <line>13</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/resilience/src/main/java/com/pulsar/Main.java</url>
+          <line>13</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="com.example.registry.EtcdRegistry" memberName="registeredServiceNodeKeys" />
+      </pinned-members>
+    </pin-to-top-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/my_rpc$EasyConsumerExample.ic" NAME="EasyConsumerExample 覆盖结果" MODIFIED="1773128767252" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true">
+      <FILTER>com.example.*</FILTER>
+    </SUITE>
+  </component>
+</project>

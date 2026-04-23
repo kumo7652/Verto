@@ -13,6 +13,7 @@ import com.pulsar.registry.cache.ServiceCache;
 import com.pulsar.registry.config.RegistryConfig;
 import com.pulsar.registry.event.ChangeType;
 import com.pulsar.registry.event.ServiceChangeEvent;
+import com.pulsar.utils.ThreadPoolBuilder;
 import io.etcd.jetcd.*;
 import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
@@ -175,7 +176,10 @@ public class EtcdRegistry implements Registry {
      *   <li>Watch 断连后的重新订阅（服务消费者）</li>
      * </ol>
      */
-    private final ScheduledExecutorService reconnectExecutor = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService reconnectExecutor =
+            (ScheduledExecutorService) ThreadPoolBuilder.forName("reconnect-executor")
+                    .scheduled(2)
+                    .build();
 
     // ==================== 生命周期 ====================
 

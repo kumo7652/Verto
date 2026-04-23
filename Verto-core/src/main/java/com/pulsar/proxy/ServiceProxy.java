@@ -8,7 +8,6 @@ import com.pulsar.fault.retry.RetryStrategyFactory;
 import com.pulsar.fault.tolerant.TolerantStrategy;
 import com.pulsar.fault.tolerant.TolerantStrategyFactory;
 import com.pulsar.loadbalancer.LoadBalancer;
-import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
 import com.pulsar.registry.Registry;

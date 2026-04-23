@@ -7,7 +7,6 @@ import com.pulsar.extension.SpiExtension;
 import com.pulsar.fault.retry.RetryStrategy;
 import com.pulsar.fault.retry.RetryStrategyFactory;
 import com.pulsar.loadbalancer.LoadBalancer;
-import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
 import com.pulsar.model.ServiceNode;

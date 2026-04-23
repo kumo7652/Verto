@@ -20,8 +20,6 @@
         <module>resilience</module>
         <module>Verto-core</module>
         <module>Verto-spring-boot-starter</module>
-        <module>provider</module>
-        <module>consumer</module>
     </modules>
 
     <properties>

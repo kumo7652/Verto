@@ -1,9 +1,7 @@
 package com.pulsar.config;
 
-import com.pulsar.loadbalancer.LoadBalancerKeys;
 import com.pulsar.metadata.config.MetadataConfig;
 import com.pulsar.registry.config.RegistryConfig;
-import com.pulsar.serializer.SerializerKeys;
 import lombok.Data;
 
 /**
@@ -11,7 +9,7 @@ import lombok.Data;
  */
 @Data
 public class ApplicationConfig {
-    private String name = "my-rpc";
+    private String name = "Verto";
     private String version = "1.0";
     private String serverHost = "localhost";
     private Integer serverPort = 8081;
