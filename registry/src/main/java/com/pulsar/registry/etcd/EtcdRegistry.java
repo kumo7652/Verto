@@ -207,6 +207,7 @@ public class EtcdRegistry implements Registry {
         nodeLeases.forEach((node, context) -> {
             try {
                 log.warn("关闭节点[{}]续约流", node);
+                context.closedIntentionally = true;
                 context.keepAliveClient.close();
             } catch (Exception e) {
                 log.error("关闭节点[{}]续约流失败", node, e);
@@ -299,6 +300,8 @@ public class EtcdRegistry implements Registry {
      * <p>复用已有 LeaseContext 并更新 leaseId，保证续约流持有正确的引用
      */
     private void doRegister(ServiceNode serviceNode, LeaseContext context) throws RegistryException {
+        boolean isReconnect = context.leaseId > 0;
+
         // 获取租约id
         long leaseId;
         try {
@@ -306,7 +309,9 @@ public class EtcdRegistry implements Registry {
                     .get(requestTimeout, TimeUnit.MILLISECONDS).getID();
         } catch (Exception e) {
             log.error("register lease error", e);
-            nodeLeases.remove(serviceNode.getServiceNodeKey());
+            if (!isReconnect) {
+                nodeLeases.remove(serviceNode.getServiceNodeKey());
+            }
             throw new RegistryException(RpcErrorCode.REGISTER_FAILED,
                     "register lease failed: " + e.getMessage());
         }
@@ -328,7 +333,9 @@ public class EtcdRegistry implements Registry {
             kvClient.put(key, value, putOption).get(requestTimeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             log.error("register put error", e);
-            nodeLeases.remove(serviceNode.getServiceNodeKey());
+            if (!isReconnect) {
+                nodeLeases.remove(serviceNode.getServiceNodeKey());
+            }
             throw new RegistryException(RpcErrorCode.REGISTER_FAILED,
                     "register put failed: " + e.getMessage());
         }
@@ -337,7 +344,9 @@ public class EtcdRegistry implements Registry {
 
         // 关闭旧的租约续约流
         if (context.keepAliveClient != null) {
+            context.closedIntentionally = true;
             context.keepAliveClient.close();
+            context.closedIntentionally = false;
         }
 
         // 重置租约等待时间 - 重连时调用
@@ -397,6 +406,7 @@ public class EtcdRegistry implements Registry {
         // 移除租约上下文并关闭续约流
         LeaseContext context = nodeLeases.remove(serviceNode.getServiceNodeKey());
         if (context != null && context.keepAliveClient != null) {
+            context.closedIntentionally = true;
             try {
                 context.keepAliveClient.close();
             } catch (Exception e) {
@@ -535,9 +545,15 @@ public class EtcdRegistry implements Registry {
                 scheduleReconnect(serviceNode, context, new AtomicInteger(0));
             }
 
+            // 由于keepAlive方法对于tcp连接错误没有没有包装，etcd实例挂掉之后会走这个回调
             @Override
             public void onCompleted() {
-                log.info("节点[{}]续约流关闭", serviceNode.getServiceNodeKey());
+                if (context.closedIntentionally) {
+                    log.info("节点[{}]续约流主动关闭", serviceNode.getServiceNodeKey());
+                    return;
+                }
+                log.warn("节点[{}]续约流异常关闭，将尝试重连", serviceNode.getServiceNodeKey());
+                scheduleReconnect(serviceNode, context, new AtomicInteger(0));
             }
         });
     }
@@ -790,6 +806,9 @@ public class EtcdRegistry implements Registry {
 
         /** 是否正在重连中，防止并发重注册 */
         final AtomicBoolean reconnecting = new AtomicBoolean(false);
+
+        /** 是否为主动关闭（unregister/destroy），避免 onCompleted 时误触发重连 */
+        volatile boolean closedIntentionally = false;
 
         /** keepAlive 返回的 CloseableClient，close 即停止续约流 */
         volatile CloseableClient keepAliveClient;

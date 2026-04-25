@@ -4,24 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="重构负载均衡接口并实现随机、轮询两种负载均衡器">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="实现线程池">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/config/ApplicationConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/config/ApplicationConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/User.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/UserService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/utils/ThreadPoolFactory.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/consumer/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/consumer/src/main/java/com/pulsar/EasyConsumerExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/provider/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/provider/src/main/java/com/pulsar/EasyProviderExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/provider/src/main/java/com/pulsar/UserServiceImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/model/LoadBalancerContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/pulsar/model/LoadBalancerContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/model/ServiceNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/pulsar/model/ServiceNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/loadbalancer/src/main/java/com/pulsar/loadbalancer/RoundRobinBalancer.java" beforeDir="false" afterPath="$PROJECT_DIR$/loadbalancer/src/main/java/com/pulsar/loadbalancer/RoundRobinBalancer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/loadbalancer/src/main/resources/META-INF/rpc/com.pulsar.loadbalancer.LoadBalancer.imports" beforeDir="false" afterPath="$PROJECT_DIR$/loadbalancer/src/main/resources/META-INF/rpc/com.pulsar.loadbalancer.LoadBalancer.imports" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/registry/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/registry/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/metadata/redis/RedisMetadataCenter.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/metadata/redis/RedisMetadataCenter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistry.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistry.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/serializer/src/main/java/com/pulsar/serializer/SerializerKeys.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,47 +57,51 @@
     <option name="sortByType" value="true" />
     <option name="sortKey" value="BY_TYPE" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;JUnit.ProtocolMessageTest.testEncodeAndDecode.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.RegistryTest.register.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RegistryTest.serviceDiscovery.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.RegistryTest.testHeartBeat.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RegistryTest.unRegister.executor&quot;: &quot;Run&quot;,
-    &quot;Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:clean].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:help].executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Codes/Java/Verto&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;D:/Codes/Java/Verto/serializer/src/main/java/com/example/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
-    &quot;应用程序.EasyConsumerExample.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.EasyProviderExample.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.EtcdRegistry.executor&quot;: &quot;Debug&quot;,
-    &quot;应用程序.Main.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.MessageDecoder.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.VertxTcpClient.executor&quot;: &quot;Run&quot;,
-    &quot;应用程序.VertxTcpServer.executor&quot;: &quot;Run&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease.executor": "Run",
+    "JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId.executor": "Run",
+    "JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd.executor": "Run",
+    "JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive.executor": "Run",
+    "JUnit.ProtocolMessageTest.testEncodeAndDecode.executor": "Debug",
+    "JUnit.RegistryTest.register.executor": "Run",
+    "JUnit.RegistryTest.serviceDiscovery.executor": "Debug",
+    "JUnit.RegistryTest.testHeartBeat.executor": "Run",
+    "JUnit.RegistryTest.unRegister.executor": "Run",
+    "Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:clean].executor": "Run",
+    "Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:help].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/Codes/Java/Verto",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "D:/Codes/Java/Verto/serializer/src/main/java/com/example/Main.java",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true",
+    "应用程序.EasyConsumerExample.executor": "Run",
+    "应用程序.EasyProviderExample.executor": "Run",
+    "应用程序.EtcdRegistry.executor": "Debug",
+    "应用程序.Main.executor": "Run",
+    "应用程序.MessageDecoder.executor": "Run",
+    "应用程序.VertxTcpClient.executor": "Run",
+    "应用程序.VertxTcpServer.executor": "Run"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/新建临时文件&quot;: [
-      &quot;IgnoreLang&quot;
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/新建临时文件": [
+      "IgnoreLang"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Codes\Java\Verto\loadbalancer\src\main\resources" />
@@ -124,7 +120,7 @@
       <recent name="com.example.utils" />
     </key>
   </component>
-  <component name="RunManager" selected="应用程序.EasyConsumerExample">
+  <component name="RunManager" selected="JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd">
     <configuration default="true" type="Application" factoryName="Application">
       <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -146,30 +142,66 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="EasyProviderExample" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-      <option name="MAIN_CLASS_NAME" value="com.pulsar.EasyProviderExample" />
+    <configuration name="EtcdRegistryTest.register_assignsNodeIdAndCreatesLease" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="registry" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.pulsar.annotation.*" />
+          <option name="PATTERN" value="com.pulsar.registry.etcd.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
+      <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistryTest" />
+      <option name="METHOD_NAME" value="register_assignsNodeIdAndCreatesLease" />
+      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="VertxTcpServer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-      <option name="MAIN_CLASS_NAME" value="com.example.server.tcp.VertxTcpServer" />
+    <configuration name="EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="registry" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.example.server.tcp.*" />
+          <option name="PATTERN" value="com.pulsar.registry.etcd.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
+      <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistryTest" />
+      <option name="METHOD_NAME" value="register_multipleNodesSameService_incrementsNodeId" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="registry" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.pulsar.registry.etcd.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistryTest" />
+      <option name="METHOD_NAME" value="register_shouldAssignNodeIdAndPersistToEtcd" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="registry" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.pulsar.registry.etcd.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistryTest" />
+      <option name="METHOD_NAME" value="unregister_deletesKeyAndClosesKeepAlive" />
+      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -243,16 +275,20 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease" />
+      <item itemvalue="JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId" />
+      <item itemvalue="JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd" />
+      <item itemvalue="JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive" />
       <item itemvalue="Spring Boot.RpcSpringBootStarterApplication" />
       <item itemvalue="应用程序.EasyConsumerExample" />
-      <item itemvalue="应用程序.EasyProviderExample" />
-      <item itemvalue="应用程序.VertxTcpServer" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd" />
+        <item itemvalue="JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive" />
+        <item itemvalue="JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId" />
+        <item itemvalue="JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease" />
         <item itemvalue="应用程序.EasyConsumerExample" />
-        <item itemvalue="应用程序.EasyProviderExample" />
-        <item itemvalue="应用程序.VertxTcpServer" />
       </list>
     </recent_temporary>
   </component>
@@ -402,7 +438,7 @@
       <workItem from="1777033960225" duration="1918000" />
       <workItem from="1777036252170" duration="2199000" />
       <workItem from="1777038604307" duration="5896000" />
-      <workItem from="1777086843582" duration="1375000" />
+      <workItem from="1777086843582" duration="14162000" />
     </task>
     <task id="LOCAL-00001" summary="初始项目结构定义">
       <option name="closed" value="true" />
@@ -460,7 +496,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776957221589</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="实现线程池">
+      <option name="closed" value="true" />
+      <created>1777089462877</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1777089462877</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -514,7 +558,8 @@
     <MESSAGE value="尝试修复服务发现、服务续约功能" />
     <MESSAGE value="注册中心完整代码" />
     <MESSAGE value="重构负载均衡接口并实现随机、轮询两种负载均衡器" />
-    <option name="LAST_COMMIT_MESSAGE" value="重构负载均衡接口并实现随机、轮询两种负载均衡器" />
+    <MESSAGE value="实现线程池" />
+    <option name="LAST_COMMIT_MESSAGE" value="实现线程池" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

@@ -29,7 +29,8 @@ public class RedisMetadataCenter implements MetadataCenter {
     @Override
     public void init(MetadataConfig config) {
         RedisURI.Builder uriBuilder = RedisURI.builder()
-                .withAuthentication(RedisURI.create(config.getAddress()).getSocket());
+                .withHost(RedisURI.create(config.getAddress()).getHost())
+                .withPort(RedisURI.create(config.getAddress()).getPort());
 
         if (config.getPassword() != null && !config.getPassword().isEmpty()) {
             uriBuilder.withPassword(config.getPassword().toCharArray());

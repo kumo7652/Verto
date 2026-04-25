@@ -1,3 +1,5 @@
-com.pulsar.loadbalancer.RoundRobinLoadBalancer
+com.pulsar.loadbalancer.RoundRobinBalancer
 com.pulsar.loadbalancer.RandomLoadBalancer
+com.pulsar.loadbalancer.WeightedRandomBalancer
+com.pulsar.loadbalancer.WeightedRoundRobinBalancer
 com.pulsar.loadbalancer.ConsistentHashLoadBalancer

@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 服务节点 - 注册中心轻量级模型，仅含服务发现所需信息
  */
@@ -48,6 +51,18 @@ public class ServiceNode {
      * 节点ID，格式如 001、002，用于唯一标识同一服务下的不同节点实例
      */
     private String nodeId;
+
+    /**
+     * 节点权重，范围 [1, 100]，默认 100。值越大分配流量越多
+     */
+    @Builder.Default
+    private int weight = 100;
+
+    /**
+     * 节点标签（灰度、机房、环境等）
+     */
+    @Builder.Default
+    private Map<String, String> tags = new HashMap<>();
 
     /**
      * 获取服务键名

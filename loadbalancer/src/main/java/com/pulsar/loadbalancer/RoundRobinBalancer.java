@@ -35,7 +35,7 @@ public class RoundRobinBalancer implements LoadBalancer {
             return Optional.of(nodes.get(0));
         }
 
-        String serviceKey = nodes.get(0).getServiceKey();
+        String serviceKey = context.serviceKey();
         AtomicInteger counter = serviceIndexes.computeIfAbsent(serviceKey,
                 k -> new AtomicInteger(0));
 
