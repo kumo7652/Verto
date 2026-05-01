@@ -65,9 +65,6 @@ public class WeightedRoundRobinBalancer implements LoadBalancer {
                 }
             }
 
-            if (best == null) {
-                return Optional.empty();
-            }
             // 选中节点减去总权重，使其在下轮中优先级降低
             best.currentWeight -= totalWeight;
             return Optional.of(best.node);

@@ -48,11 +48,6 @@ public class ServiceNode {
     private String serviceVersion = "1.0";
 
     /**
-     * 节点ID，格式如 001、002，用于唯一标识同一服务下的不同节点实例
-     */
-    private String nodeId;
-
-    /**
      * 节点权重，范围 [1, 100]，默认 100。值越大分配流量越多
      */
     @Builder.Default
@@ -73,11 +68,11 @@ public class ServiceNode {
 
     /**
      * 获取服务注册节点键名
-     * 格式：{serviceName:version}/{serviceName-id}
-     * 例如：order-service:1.0/order-service-001
+     * 格式：{serviceName:version}/{serviceName@host:port}
+     * 例如：order-service:1.0/order-service@192.168.1.1:8080
      */
     public String getServiceNodeKey() {
-        return String.format("%s/%s", getServiceKey(), nodeId);
+        return String.format("%s/%s@%s:%s", getServiceKey(), serviceName, serviceHost, servicePort);
     }
 
     /**
