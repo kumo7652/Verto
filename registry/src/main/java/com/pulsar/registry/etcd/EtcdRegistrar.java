@@ -158,11 +158,13 @@ class EtcdRegistrar {
         if (context.keepAliveClient != null) {
             context.closedIntentionally = true;
             context.keepAliveClient.close();
-            context.closedIntentionally = false;
         }
 
         context.resetBackoff();
         startKeepAlive(serviceNode, context);
+
+        // 新的续约流重建之后，将标志重置
+        context.closedIntentionally = false;
     }
 
     /**
