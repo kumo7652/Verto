@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="修改注册中心心跳续约bug">
+    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="修复重新注册竞态问题">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/config/RegistryConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/config/RegistryConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistrar.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistrar.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -52,6 +53,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;JUnit.EtcdRegistrarTest.register_shouldWriteKeyWithLease.executor&quot;: &quot;Run&quot;,
     &quot;JUnit.EtcdRegistryTest.provider_registerAndRenewal.executor&quot;: &quot;Run&quot;,
     &quot;JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease.executor&quot;: &quot;Run&quot;,
     &quot;JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId.executor&quot;: &quot;Run&quot;,
@@ -100,6 +102,9 @@
     ]
   }
 }</component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Codes\Java\Verto\loadbalancer\src\main\resources" />
@@ -118,10 +123,26 @@
       <recent name="com.example.utils" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.EtcdRegistryTest.provider_registerAndRenewal">
+  <component name="RunManager" selected="JUnit.EtcdRegistrarTest.register_shouldWriteKeyWithLease">
     <configuration default="true" type="Application" factoryName="Application">
       <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../jdk-17_windows-x64_bin/jdk-17.0.10" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EtcdRegistrarTest.register_shouldWriteKeyWithLease" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="registry" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.pulsar.registry.etcd.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
+      <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistrarTest" />
+      <option name="METHOD_NAME" value="register_shouldWriteKeyWithLease" />
+      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -137,22 +158,6 @@
       <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
       <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistryTest" />
       <option name="METHOD_NAME" value="provider_registerAndRenewal" />
-      <option name="TEST_OBJECT" value="method" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="EtcdRegistryTest.register_assignsNodeIdAndCreatesLease" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="registry" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.pulsar.registry.etcd.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="com.pulsar.registry.etcd" />
-      <option name="MAIN_CLASS_NAME" value="com.pulsar.registry.etcd.EtcdRegistryTest" />
-      <option name="METHOD_NAME" value="register_assignsNodeIdAndCreatesLease" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -275,8 +280,8 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="JUnit.EtcdRegistrarTest.register_shouldWriteKeyWithLease" />
       <item itemvalue="JUnit.EtcdRegistryTest.provider_registerAndRenewal" />
-      <item itemvalue="JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease" />
       <item itemvalue="JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId" />
       <item itemvalue="JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd" />
       <item itemvalue="JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive" />
@@ -284,11 +289,11 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.EtcdRegistrarTest.register_shouldWriteKeyWithLease" />
         <item itemvalue="JUnit.EtcdRegistryTest.provider_registerAndRenewal" />
         <item itemvalue="JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd" />
         <item itemvalue="JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive" />
         <item itemvalue="JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId" />
-        <item itemvalue="JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease" />
       </list>
     </recent_temporary>
   </component>
@@ -456,7 +461,8 @@
       <workItem from="1777389189363" duration="596000" />
       <workItem from="1777435811414" duration="13406000" />
       <workItem from="1777636988271" duration="3474000" />
-      <workItem from="1777642518533" duration="653000" />
+      <workItem from="1777642518533" duration="5236000" />
+      <workItem from="1777695608319" duration="13822000" />
     </task>
     <task id="LOCAL-00001" summary="初始项目结构定义">
       <option name="closed" value="true" />
@@ -538,7 +544,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777639118172</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="修复重新注册竞态问题">
+      <option name="closed" value="true" />
+      <created>1777643222618</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777643222618</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -595,7 +609,8 @@
     <MESSAGE value="实现线程池" />
     <MESSAGE value="实现负载均衡相关并修复注册中心续约bug" />
     <MESSAGE value="修改注册中心心跳续约bug" />
-    <option name="LAST_COMMIT_MESSAGE" value="修改注册中心心跳续约bug" />
+    <MESSAGE value="修复重新注册竞态问题" />
+    <option name="LAST_COMMIT_MESSAGE" value="修复重新注册竞态问题" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

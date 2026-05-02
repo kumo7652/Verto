@@ -35,5 +35,5 @@ public class RegistryConfig {
     /**
      * 请求超时时间（ms）
      */
-    private Long requestTimeout = 10000L;
+    private Long requestTimeout = 5000L;
 }

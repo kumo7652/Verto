@@ -8,14 +8,12 @@ import cn.hutool.json.JSONUtil;
 import io.etcd.jetcd.*;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
 import io.etcd.jetcd.options.PutOption;
-import io.etcd.jetcd.support.CloseableClient;
-import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -25,7 +23,7 @@ class EtcdRegistrar {
     private final Lease leaseClient;
 
     /** 重连线程池 */
-    private static final String SCHEDULER_POOL_NAME = "registrar-reconnect";
+    private static final String SCHEDULER_POOL_NAME = "etcd-registrar";
     private final ScheduledExecutorService scheduler;
 
     /** 请求超时时间 */
@@ -40,13 +38,14 @@ class EtcdRegistrar {
         this.requestTimeout = requestTimeout;
         this.scheduler = (ScheduledExecutorService) ThreadPoolBuilder
                 .forName(SCHEDULER_POOL_NAME)
-                .scheduled(1)
+                .scheduled(4)
                 .build();
     }
 
     /**
      * <h3>将节点注册到注册中心</h3>
      * 获取租约上下文并将节点信息写入
+     *
      * @param serviceNode 节点信息
      * @throws RegistryException 写入节点失败
      */
@@ -61,6 +60,7 @@ class EtcdRegistrar {
     /**
      * <h3>将节点从注册中心注销</h3>
      * 关闭续约流并删除节点对应的键
+     *
      * @param serviceNode 节点信息
      * @throws RegistryException 删除节点失败
      */
@@ -69,13 +69,8 @@ class EtcdRegistrar {
         ByteSequence key = ByteSequence.from(serviceKey, StandardCharsets.UTF_8);
 
         LeaseContext context = nodeLeases.remove(serviceNode.getServiceNodeKey());
-        if (context != null && context.keepAliveClient != null) {
-            context.closedIntentionally = true;
-            try {
-                context.keepAliveClient.close();
-            } catch (Exception e) {
-                log.warn("关闭节点[{}]续约流失败", serviceNode.getServiceNodeKey(), e);
-            }
+        if  (context != null && context.keepAliveFuture != null) {
+            context.keepAliveFuture.cancel(false);
         }
 
         try {
@@ -89,16 +84,13 @@ class EtcdRegistrar {
 
     /**
      * <h3>销毁注册器</h3>
+     *
      * 关闭所有节点的续约流、撤销租约并清理资源
      */
     void destroy() {
         nodeLeases.forEach((node, context) -> {
-            try {
-                log.warn("关闭节点[{}]续约流", node);
-                context.closedIntentionally = true;
-                context.keepAliveClient.close();
-            } catch (Exception e) {
-                log.error("关闭节点[{}]续约流失败", node, e);
+            if (context.keepAliveFuture != null) {
+                context.keepAliveFuture.cancel(false);
             }
             leaseClient.revoke(context.leaseId);
         });
@@ -109,6 +101,7 @@ class EtcdRegistrar {
     /**
      * <h3>将节点信息写入etcd</h3>
      * 申请租约、写入键值对并启动续约流，重连场景下会关闭旧续约流后重新建立
+     *
      * @param serviceNode 节点信息
      * @param context 该节点对应的租约上下文
      * @throws RegistryException 申请租约或写入键值对失败
@@ -154,17 +147,9 @@ class EtcdRegistrar {
                     "failed putting service info: " + e.getMessage());
         }
 
-        // 第一次开启或者重新开启续约流
-        if (context.keepAliveClient != null) {
-            context.closedIntentionally = true;
-            context.keepAliveClient.close();
-        }
-
+        // 启动链式续约调度（链已自然终止，无需 cancel）
         context.resetBackoff();
         startKeepAlive(serviceNode, context);
-
-        // 新的续约流重建之后，将标志重置
-        context.closedIntentionally = false;
     }
 
     /**
@@ -174,147 +159,135 @@ class EtcdRegistrar {
      * @param context 该节点对应的租约上下文
      */
     private void startKeepAlive(ServiceNode serviceNode, LeaseContext context) {
-        context.keepAliveClient = leaseClient.keepAlive(context.leaseId, new StreamObserver<>() {
-            @Override
-            public void onNext(LeaseKeepAliveResponse response) {
-                log.debug("节点[{}]续约成功, TTL: {}s", serviceNode.getServiceNodeKey(), response.getTTL());
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                log.error("节点[{}]续约失败", serviceNode.getServiceNodeKey(), t);
-                scheduleReconnect(serviceNode, context);
-            }
-
-            @Override
-            public void onCompleted() {
-                if (context.closedIntentionally) {
-                    log.info("节点[{}]续约流主动关闭", serviceNode.getServiceNodeKey());
-                    return;
-                }
-
-                log.warn("节点[{}]续约流异常关闭，将尝试重连", serviceNode.getServiceNodeKey());
-                scheduleReconnect(serviceNode, context);
-            }
-        });
+        context.keepAliveFuture = scheduler.schedule(
+                () -> renewLease(serviceNode, context),
+                EtcdConstants.DEFAULT_LEASE_TTL / 3,
+                TimeUnit.SECONDS
+        );
     }
 
     /**
-     * <h3>启动续约重连状态机</h3>
-     * 创建并启动一个重连任务，由状态机驱动退避和重试
+     * <h3>执行单次租约续约</h3>
+     * 调用keepAliveOnce续约，成功则重置退避并调度下一次续约，失败则触发退避重注册
+     *
      * @param serviceNode 节点信息
-     * @param context 该节点对应的租约上下文
+     * @param context     该节点对应的租约上下文
      */
-    private void scheduleReconnect(ServiceNode serviceNode, LeaseContext context) {
-        new ReconnectTask(serviceNode, context).start();
+    private void renewLease(ServiceNode serviceNode, LeaseContext context) {
+        String nodeKey = serviceNode.getServiceNodeKey();
+        long leaseId = context.leaseId;
+
+        // 节点已注销
+        if (!nodeLeases.containsKey(nodeKey)) return;
+
+        // 尝试续约
+        try {
+            LeaseKeepAliveResponse response = leaseClient.keepAliveOnce(leaseId)
+                    .get(requestTimeout, TimeUnit.MILLISECONDS);
+
+            if (response.getTTL() > 0) {
+                log.info("节点[{}]续约成功，TTL: {}s", nodeKey, response.getTTL());
+                context.resetBackoff();
+                startKeepAlive(serviceNode, context);
+            } else {
+                log.warn("节点[{}]租约已经不存在，尝试从新注册", nodeKey);
+                reconnect(serviceNode, context);
+            }
+        } catch (Exception e) {
+            // 续约失败：不管是网络不通还是 etcd 挂了，直接重注册
+            log.warn("节点[{}]续约失败，将重新注册: ", nodeKey, e);
+            reconnect(serviceNode, context);
+        }
     }
 
     /**
-     * <h3>续约重连状态机</h3>
-     * 通过显式状态驱动重连流程，避免递归调度。
+     * <h3>退避后全量重注册</h3>
+     * <p>
+     * 由于链式调度已自然终止（未调用 startKeepAlive），
+     * 无需额外取消调度。
+     * </p>
+     *
+     * @param serviceNode 节点信息
+     * @param context     该节点对应的租约上下文
      */
-    private class ReconnectTask implements Runnable {
-        private final ServiceNode serviceNode;
-        private final LeaseContext context;
-        private int attempts = 0;
+    private void reconnect(ServiceNode serviceNode, LeaseContext context) {
+        long delay = context.backoff();
+        String nodeKey = serviceNode.getServiceNodeKey();
 
-        private enum State { BACKOFF, RECONNECT, IDLE, ABANDON }
-        private State state = State.BACKOFF;
-
-        ReconnectTask(ServiceNode serviceNode, LeaseContext context) {
-            this.serviceNode = serviceNode;
-            this.context = context;
+        // 达到最大退避时间且超过最大重连次数 → 放弃
+        if (delay == EtcdConstants.RECONNECT_MAX_DELAY_MS && context.isAborted()) {
+            log.error("节点[{}]达到最大重连次数，放弃重连", nodeKey);
+            nodeLeases.remove(nodeKey);
+            return;
         }
 
-        void start() {
-            scheduleNext(context.backoff.get());
-        }
-
-        private void scheduleNext(long delayMs) {
-            scheduler.schedule(this, delayMs, TimeUnit.MILLISECONDS);
-        }
-
-        @Override
-        public void run() {
-            switch (state) {
-                case BACKOFF -> onBackoff();
-                case RECONNECT -> onReconnect();
-                case ABANDON -> onAbandon();
-                // IDLE: 状态机终止，不再调度
+        log.info("节点[{}]将在{}ms后重新注册", nodeKey, delay);
+        scheduler.schedule(() -> {
+            if (!nodeLeases.containsKey(nodeKey)) {
+                return;
             }
-        }
 
-        private void onAbandon() {
-            log.error("节点[{}]达到最大重连次数，放弃重连", serviceNode.getServiceNodeKey());
-            nodeLeases.remove(serviceNode.getServiceNodeKey());
-            context.exitReconnect();
-            context.keepAliveClient.close();
-        }
-
-        private void onBackoff() {
-            if (isCancelled()) return;
-            state = State.RECONNECT;
-            scheduleNext(0);
-        }
-
-        private void onReconnect() {
-            if (isCancelled()) return;
-            if (!context.tryReconnect()) return;
-
-            String nodeKey = serviceNode.getServiceNodeKey();
             try {
-                log.info("正在为节点[{}]进行故障恢复（重新注册）...", nodeKey);
                 writeNode(serviceNode, context);
-
-                log.info("节点[{}]故障恢复成功！", nodeKey);
-                state = State.IDLE;
-                context.exitReconnect();
+                context.resetBackoff();
+                context.reconnectAttempts.set(0);
+                log.info("节点[{}]重注册成功", nodeKey);
             } catch (Exception e) {
-                log.error("节点[{}]故障恢复失败，将继续重试", nodeKey, e);
-                long delay = context.Backoff();
-
-                if (needAbandon(delay)) {
-                    state = State.ABANDON;
-                    scheduleNext(0);
-                } else {
-                    state = State.BACKOFF;
-                    context.exitReconnect();
-                    scheduleNext(delay);
-                }
+                log.error("节点[{}]重注册失败", nodeKey, e);
+                reconnect(serviceNode, context);
             }
-        }
-
-        private boolean isCancelled() {
-            if (!nodeLeases.containsKey(serviceNode.getServiceNodeKey())) {
-                log.info("节点[{}]已注销，跳过续约重连", serviceNode.getServiceNodeKey());
-                state = State.IDLE;
-                return true;
-            }
-            return false;
-        }
-
-        private boolean needAbandon(long delay) {
-            return delay == EtcdConstants.RECONNECT_MAX_DELAY_MS && ++attempts > EtcdConstants.RECONNECT_MAX_ATTEMPTS;
-        }
+        }, delay, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * <h3>节点租约上下文</h3>
+     * 维护单个节点的租约ID、续约调度句柄和退避状态
+     */
     private static class LeaseContext {
+        /** 当前租约 ID */
         volatile long leaseId;
+
+        /** 续约调度 Future，用于取消 */
+        volatile ScheduledFuture<?> keepAliveFuture;
+
+        /** 退避延迟（毫秒），成功后续约时重置 */
         final AtomicLong backoff = new AtomicLong(EtcdConstants.RECONNECT_INITIAL_DELAY_MS);
-        final AtomicBoolean reconnecting = new AtomicBoolean(false);
-        volatile boolean closedIntentionally = false;
-        volatile CloseableClient keepAliveClient;
 
-        LeaseContext(long leaseId) { this.leaseId = leaseId; }
+        /** 全量重注册已尝试次数（达上限后放弃） */
+        final AtomicInteger reconnectAttempts = new AtomicInteger(0);
 
-        void resetBackoff() { backoff.set(EtcdConstants.RECONNECT_INITIAL_DELAY_MS); }
-
-        long Backoff() {
-            return backoff.updateAndGet(current ->
-                    Math.min((long) (current * EtcdConstants.RECONNECT_MULTIPLIER), EtcdConstants.RECONNECT_MAX_DELAY_MS));
+        LeaseContext(long leaseId) {
+            this.leaseId = leaseId;
         }
 
-        boolean tryReconnect() { return reconnecting.compareAndSet(false, true); }
-        void exitReconnect() { reconnecting.set(false); }
+        /**
+         * <h3>重置退避延迟</h3>
+         * 将退避延迟恢复为初始值，在续约或重注册成功后调用
+         */
+        void resetBackoff() {
+            backoff.set(EtcdConstants.RECONNECT_INITIAL_DELAY_MS);
+        }
+
+        /**
+         * <h3>计算下一次退避延迟</h3>
+         * 按乘数指数增长，上限为最大退避时间，返回增长前的旧值用于本次调度
+         *
+         * @return 本次调度应使用的退避延迟（毫秒）
+         */
+        long backoff() {
+            return backoff.getAndUpdate(current ->
+                    Math.min((long) (current * EtcdConstants.RECONNECT_MULTIPLIER),
+                            EtcdConstants.RECONNECT_MAX_DELAY_MS));
+        }
+
+        /**
+         * <h3>判断是否应放弃重连</h3>
+         * 递增重连次数并判断是否超过最大重连次数，仅在退避达到上限时调用
+         *
+         * @return 是否应放弃重连
+         */
+        boolean isAborted() {
+            return reconnectAttempts.incrementAndGet() > EtcdConstants.RECONNECT_MAX_ATTEMPTS;
+        }
     }
 }
