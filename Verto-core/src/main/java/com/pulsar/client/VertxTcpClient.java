@@ -16,10 +16,6 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import lombok.extern.slf4j.Slf4j;
-import com.pulsar.protocol.MessageDecoder;
-import com.pulsar.protocol.MessageEncoder;
-import com.pulsar.protocol.MessageTypeEnum;
-import com.pulsar.protocol.ProtocolMessage;
 
 import java.util.Map;
 import java.util.Queue;

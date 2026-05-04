@@ -4,10 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="重构注册方续约功能，放弃使用gRPC stream，选择使用请求响应模式">
+    <list default="true" id="b9589193-8324-4e0a-a4d2-e859f7d583f5" name="更改" comment="重构服务监听功能，默认使用推模式推送事件，当网络波动或者异常之后降级为拉模式">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistry.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdRegistry.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdWatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/etcd/EtcdWatcher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/client/VertxTcpClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/client/VertxTcpClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/server/ServerHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/Verto-core/src/main/java/com/pulsar/server/ServerHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/pulsar/model/RpcResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/pulsar/model/RpcResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/protocol/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/protocol/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/protocol/src/main/java/com/pulsar/protocol/MessageDecoder.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/protocol/src/main/java/com/pulsar/protocol/MessageEncoder.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/protocol/src/main/java/com/pulsar/protocol/MessageStatusEnum.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/protocol/src/main/java/com/pulsar/protocol/MessageTypeEnum.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/protocol/src/main/java/com/pulsar/protocol/ProtocolMessage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/cache/ServiceCache.java" beforeDir="false" afterPath="$PROJECT_DIR$/registry/src/main/java/com/pulsar/registry/cache/ServiceCache.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,58 +59,58 @@
     <option name="sortByType" value="true" />
     <option name="sortKey" value="BY_TYPE" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "JUnit.EtcdRegistrarTest.register_shouldWriteKeyWithLease.executor": "Run",
-    "JUnit.EtcdRegistryTest.provider_registerAndRenewal.executor": "Run",
-    "JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease.executor": "Run",
-    "JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId.executor": "Run",
-    "JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd.executor": "Run",
-    "JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive.executor": "Run",
-    "JUnit.EtcdWatcherTest.discover_shouldReturnNodesFromEtcd.executor": "Run",
-    "JUnit.ProtocolMessageTest.testEncodeAndDecode.executor": "Debug",
-    "JUnit.RegistryTest.register.executor": "Run",
-    "JUnit.RegistryTest.serviceDiscovery.executor": "Debug",
-    "JUnit.RegistryTest.testHeartBeat.executor": "Run",
-    "JUnit.RegistryTest.unRegister.executor": "Run",
-    "Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:clean].executor": "Run",
-    "Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:help].executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "master",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Codes/Java/Verto",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "D:/Codes/Java/Verto/serializer/src/main/java/com/example/Main.java",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.language.and.region",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true",
-    "应用程序.EasyConsumerExample.executor": "Run",
-    "应用程序.EasyProviderExample.executor": "Run",
-    "应用程序.EtcdRegistry.executor": "Debug",
-    "应用程序.Main.executor": "Run",
-    "应用程序.MessageDecoder.executor": "Run",
-    "应用程序.VertxTcpClient.executor": "Run",
-    "应用程序.VertxTcpServer.executor": "Run"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;JUnit.EtcdRegistrarTest.register_shouldWriteKeyWithLease.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EtcdRegistryTest.provider_registerAndRenewal.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EtcdRegistryTest.register_assignsNodeIdAndCreatesLease.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EtcdRegistryTest.register_multipleNodesSameService_incrementsNodeId.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EtcdRegistryTest.register_shouldAssignNodeIdAndPersistToEtcd.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EtcdRegistryTest.unregister_deletesKeyAndClosesKeepAlive.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EtcdWatcherTest.discover_shouldReturnNodesFromEtcd.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.ProtocolMessageTest.testEncodeAndDecode.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.RegistryTest.register.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RegistryTest.serviceDiscovery.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.RegistryTest.testHeartBeat.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RegistryTest.unRegister.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.Verto [org.apache.maven.plugins:maven-clean-plugin:3.2.0:help].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Codes/Java/Verto&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;D:/Codes/Java/Verto/serializer/src/main/java/com/example/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
+    &quot;应用程序.EasyConsumerExample.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.EasyProviderExample.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.EtcdRegistry.executor&quot;: &quot;Debug&quot;,
+    &quot;应用程序.Main.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.MessageDecoder.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.VertxTcpClient.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.VertxTcpServer.executor&quot;: &quot;Run&quot;
   },
-  "keyToStringList": {
-    "com.intellij.ide.scratch.ScratchImplUtil$2/新建临时文件": [
-      "IgnoreLang"
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/新建临时文件&quot;: [
+      &quot;IgnoreLang&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
@@ -466,7 +474,8 @@
       <workItem from="1777642518533" duration="5236000" />
       <workItem from="1777695608319" duration="14133000" />
       <workItem from="1777739604595" duration="1491000" />
-      <workItem from="1777782697804" duration="7165000" />
+      <workItem from="1777782697804" duration="15587000" />
+      <workItem from="1777871927919" duration="6044000" />
     </task>
     <task id="LOCAL-00001" summary="初始项目结构定义">
       <option name="closed" value="true" />
@@ -564,7 +573,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777735330585</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="重构服务监听功能，默认使用推模式推送事件，当网络波动或者异常之后降级为拉模式">
+      <option name="closed" value="true" />
+      <created>1777812144596</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1777812144596</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -623,7 +640,8 @@
     <MESSAGE value="修改注册中心心跳续约bug" />
     <MESSAGE value="修复重新注册竞态问题" />
     <MESSAGE value="重构注册方续约功能，放弃使用gRPC stream，选择使用请求响应模式" />
-    <option name="LAST_COMMIT_MESSAGE" value="重构注册方续约功能，放弃使用gRPC stream，选择使用请求响应模式" />
+    <MESSAGE value="重构服务监听功能，默认使用推模式推送事件，当网络波动或者异常之后降级为拉模式" />
+    <option name="LAST_COMMIT_MESSAGE" value="重构服务监听功能，默认使用推模式推送事件，当网络波动或者异常之后降级为拉模式" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

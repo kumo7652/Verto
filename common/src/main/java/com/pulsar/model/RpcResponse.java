@@ -15,10 +15,16 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RpcResponse implements Serializable {
+
     /**
      * 响应数据
      */
     private Object data;
+
+    /**
+     * 响应数据类型
+     */
+    private Class<?> dataType;
 
     /**
      * 响应信息
@@ -26,12 +32,12 @@ public class RpcResponse implements Serializable {
     private String message;
 
     /**
-     * 异常信息
+     * 错误码
      */
-    private Exception exception;
+    private String errorCode;
 
     /**
-     * 响应数据类型
+     * 错误信息
      */
-    private Class<?> dataType;
+    private String errorMessage;
 }
