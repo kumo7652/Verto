@@ -17,7 +17,7 @@ public interface RequestHandler {
      * <h3>处理收到的 RPC 请求</h3>
      * 传输层解码后调用此方法，上层完成服务查找、反射调用等业务逻辑
      *
-     * @param request 收到的请求包（含 header、body、attachment）
+     * @param request 收到的请求包（含 header、body）
      * @return 响应包
      */
     VertoPacket<RpcResponse> handle(VertoPacket<RpcRequest> request);

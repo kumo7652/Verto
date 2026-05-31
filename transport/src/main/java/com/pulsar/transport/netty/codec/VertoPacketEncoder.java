@@ -9,10 +9,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
 /**
- * <h3>Verto 协议编码器（Outbound）</h3>
- * 将 {@link VertoPacket} 编码为线上字节流，写入顺序：
- * 固定头部(20B) → attachment 变长区域 → body 变长区域。
- * 标注 {@link Sharable}，可在多个 Channel 间安全共享
+ * <h3>Verto 协议编码器（Outbound，Sharable）</h3>
+ * 将 {@link VertoPacket} 编码为线上字节流，写入顺序：固定头部(18B) → body 变长区域。
  */
 @ChannelHandler.Sharable
 public class VertoPacketEncoder extends MessageToByteEncoder<VertoPacket<?>> {
@@ -35,20 +33,9 @@ public class VertoPacketEncoder extends MessageToByteEncoder<VertoPacket<?>> {
             bodyBytes = serializer.serialize(packet.getBody());
         }
 
-        // 2. 编码 attachment
-        byte[] attBytes;
-        if (packet.hasAttachment() && packet.getAttachment() != null) {
-            attBytes = packet.getAttachment().encode();
-        } else {
-            attBytes = new byte[0];
-        }
+        header.setContentLength(bodyBytes.length);
 
-        // 3. 计算并填充 contentLength
-        int contentLength = attBytes.length + bodyBytes.length;
-        header.setContentLength(contentLength);
-        header.setAttLength((short) attBytes.length);
-
-        // 4. 写入固定头部 (20B)
+        // 2. 写入固定头部 (18B)
         out.writeByte(header.getMagic())            // 0
            .writeByte(header.getVersion())          // 1
            .writeByte(header.getFlags())            // 2
@@ -56,13 +43,9 @@ public class VertoPacketEncoder extends MessageToByteEncoder<VertoPacket<?>> {
            .writeByte(header.getType())             // 4
            .writeByte(header.getStatus())           // 5
            .writeLong(header.getRequestId())        // 6-13
-           .writeInt(contentLength)                 // 14-17
-           .writeShort((short) attBytes.length);    // 18-19
+           .writeInt(bodyBytes.length);             // 14-17
 
-        // 5. 写入变长区域：attachment + body
-        if (attBytes.length > 0) {
-            out.writeBytes(attBytes);
-        }
+        // 3. 写入 body
         if (bodyBytes.length > 0) {
             out.writeBytes(bodyBytes);
         }
