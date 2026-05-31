@@ -40,5 +40,6 @@ build/
 
 ### claude ###
 .claude
+.agents
 
 docs

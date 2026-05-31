@@ -1,5 +1,6 @@
 package com.pulsar.fault.tolerant;
 
+import com.pulsar.exception.ServiceException;
 import com.pulsar.extension.SpiExtension;
 import com.pulsar.model.RpcResponse;
 

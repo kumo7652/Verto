@@ -4,14 +4,22 @@ import com.pulsar.RpcApplication;
 import com.pulsar.config.ApplicationConfig;
 import com.pulsar.metadata.MetadataCenter;
 import com.pulsar.metadata.MetadataCenterFactory;
+import com.pulsar.model.RpcRequest;
+import com.pulsar.model.RpcResponse;
 import com.pulsar.model.ServiceMetadata;
 import com.pulsar.model.ServiceNode;
+import com.pulsar.protocol.verto.PacketStatus;
+import com.pulsar.protocol.verto.VertoPacket;
 import com.pulsar.registry.Registry;
 import com.pulsar.registry.RegistryFactory;
 import com.pulsar.registry.config.RegistryConfig;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.server.VertxTcpServer;
+import com.pulsar.serializer.SerializerFactory;
+import com.pulsar.transport.RequestHandler;
+import com.pulsar.transport.config.TransportConfig;
+import com.pulsar.transport.netty.server.NettyTransportServer;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -56,7 +64,29 @@ public class ProviderBootStrap {
             LocalRegistry.register(serviceName, service.getImplClass());
         }
 
-        VertxTcpServer vertxTcpServer = new VertxTcpServer();
-        vertxTcpServer.doStart(applicationConfig.getServerPort());
+        // 创建 RequestHandler：从 LocalRegistry 查找实现 → 反射调用
+        RequestHandler requestHandler = requestPacket -> {
+            RpcRequest rpcRequest = requestPacket.getBody();
+            long requestId = requestPacket.getHeader().getRequestId();
+            String serializerKey = SerializerFactory.getInstance()
+                    .getNameByCode(requestPacket.getHeader().getSerializerCode());
+
+            try {
+                Class<?> implClass = LocalRegistry.get(rpcRequest.getServiceName());
+                Method method = implClass.getMethod(rpcRequest.getMethodName(), rpcRequest.getParameterTypes());
+                Object result = method.invoke(implClass.getConstructor().newInstance(), rpcRequest.getParameters());
+                return VertoPacket.success(requestId, result, method.getReturnType(), serializerKey);
+            } catch (Exception e) {
+                return VertoPacket.fail(requestId, PacketStatus.SERVER_ERROR, e.getMessage(), serializerKey);
+            }
+        };
+
+        TransportConfig transportConfig = TransportConfig.builder()
+                .port(applicationConfig.getServerPort())
+                .serializerKey(applicationConfig.getSerializer())
+                .build();
+
+        NettyTransportServer server = new NettyTransportServer();
+        server.start(transportConfig, requestHandler);
     }
 }

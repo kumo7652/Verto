@@ -32,7 +32,7 @@
         <lombok.version>1.18.42</lombok.version>
         <hutool.version>5.8.42</hutool.version>
         <logback.version>1.5.32</logback.version>
-        <vertx.version>4.5.26</vertx.version>
+        <netty.version>4.2.13.Final</netty.version>
         <fastjson2.version>2.0.56</fastjson2.version>
         <hessian.version>4.0.66</hessian.version>
         <kryo.version>5.6.0</kryo.version>
@@ -44,6 +44,7 @@
         <guava-retrying.version>2.0.0</guava-retrying.version>
         <spring-boot.version>4.0.3</spring-boot.version>
         <junit.version>4.13.2</junit.version>
+        <spotbugs.version>4.9.8.1</spotbugs.version>
     </properties>
 
     <dependencyManagement>
@@ -108,9 +109,9 @@
                 <version>${logback.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-core</artifactId>
-                <version>${vertx.version}</version>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.fastjson2</groupId>
@@ -191,7 +192,32 @@
                         <encoding>UTF-8</encoding>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs.version}</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                        <xmlOutput>true</xmlOutput>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>spotbugs-check</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 </project>

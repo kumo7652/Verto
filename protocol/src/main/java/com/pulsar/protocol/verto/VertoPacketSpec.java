@@ -3,7 +3,7 @@ package com.pulsar.protocol.verto;
 /**
  * <h3>Verto 协议包规约常量</h3>
  * 定义 v2 包格式的头部偏移、字段长度、安全上限及 flags 位掩码，
- * 供 {@link VertoPacketEncoder} 和 {@link VertoPacketDecoder} 引用
+ * 供传输层编解码 handler 引用
  *
  * @see VertoPacket
  */
@@ -12,7 +12,6 @@ public final class VertoPacketSpec {
 
     // 协议标识
     public static final byte MAGIC = 0x76;
-    public static final byte VERSION_V1 = 0x1;
     public static final byte VERSION_V2 = 0x2;
 
     // v2 头部偏移
@@ -27,8 +26,7 @@ public final class VertoPacketSpec {
     public static final int ATT_LENGTH_OFFSET     = 18;  // 2B
 
     // 长度
-    public static final int V2_HEADER_LENGTH = 20;
-    public static final int V1_HEADER_LENGTH = 17;
+    public static final int HEADER_LENGTH_V2 = 20;
 
     // 安全上限
     public static final int MAX_CONTENT_LENGTH = 16 * 1024 * 1024;  // 16MB

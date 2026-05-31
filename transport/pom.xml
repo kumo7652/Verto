@@ -38,8 +38,8 @@
 
         <!-- 网络传输 -->
         <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>

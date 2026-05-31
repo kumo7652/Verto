@@ -21,7 +21,7 @@ public class RandomLoadBalancer implements LoadBalancer {
             return Optional.of(nodes.get(0));
         }
 
-        return Optional.of(nodes.get(
-                ThreadLocalRandom.current().nextInt(nodes.size())));
+        int index = ThreadLocalRandom.current().nextInt(nodes.size());
+        return Optional.of(nodes.get(index));
     }
 }

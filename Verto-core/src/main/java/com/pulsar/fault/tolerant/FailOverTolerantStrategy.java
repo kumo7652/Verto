@@ -1,19 +1,24 @@
 package com.pulsar.fault.tolerant;
 
 import com.pulsar.RpcApplication;
-import com.pulsar.client.VertxTcpClient;
 import com.pulsar.config.ApplicationConfig;
+import com.pulsar.constant.NetworkConstant;
 import com.pulsar.extension.SpiExtension;
 import com.pulsar.fault.retry.RetryStrategy;
 import com.pulsar.fault.retry.RetryStrategyFactory;
 import com.pulsar.loadbalancer.LoadBalancer;
+import com.pulsar.loadbalancer.LoadBalancerFactory;
+import com.pulsar.model.LoadBalancerContext;
 import com.pulsar.model.RpcRequest;
 import com.pulsar.model.RpcResponse;
 import com.pulsar.model.ServiceNode;
+import com.pulsar.transport.netty.client.NettyTransportClient;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @SpiExtension(name = "failOver")
 public class FailOverTolerantStrategy implements TolerantStrategy {
@@ -30,16 +35,32 @@ public class FailOverTolerantStrategy implements TolerantStrategy {
         ApplicationConfig applicationConfig = RpcApplication.getApplicationConfig();
 
         while (serviceNodes != null && !serviceNodes.isEmpty()) {
-            LoadBalancer loadBalancer = LoadBalancerFactory.getLoadBalancer(applicationConfig.getLoadBalancer());
-            Map<String, Object> requestParams = new HashMap<>();
-            requestParams.put("methodName", request.getMethodName());
+            LoadBalancerContext lbContext = LoadBalancerContext.builder()
+                    .serviceKey(selectedService.getServiceKey())
+                    .methodName(request.getMethodName())
+                    .arguments(request.getParameters())
+                    .attributes(new HashMap<>())
+                    .build();
 
-            ServiceNode currentService = loadBalancer.select(requestParams, serviceNodes);
+            LoadBalancer loadBalancer = LoadBalancerFactory.getLoadBalancer(applicationConfig.getLoadBalancer());
+            Optional<ServiceNode> currentOpt = loadBalancer.select(lbContext, serviceNodes);
+            if (currentOpt.isEmpty()) {
+                break;
+            }
+            ServiceNode currentService = currentOpt.get();
 
             try {
                 RetryStrategy retryStrategy = RetryStrategyFactory.getRetryStrategy(applicationConfig.getRetryStrategy());
-                VertxTcpClient client = VertxTcpClient.getInstance();
-                return retryStrategy.doRetry(() -> client.sendRequest(request, currentService));
+                NettyTransportClient client = RpcApplication.getTransportClient();
+                String serializerKey = applicationConfig.getSerializer();
+                return retryStrategy.doRetry(() -> {
+                    try {
+                        return client.send(request, currentService, serializerKey)
+                                .get(NetworkConstant.DEFAULT_RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
             } catch (Exception exception) {
                 removeFailedService(currentService, serviceNodes);
             }
