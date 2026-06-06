@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  * 流程：服务发现 → 负载均衡 → 构建请求 → 发送 → 返回响应。
  */
 @Slf4j
+@SuppressWarnings("ClassCanBeRecord")
 public class ClientInvocationHandler implements InvocationHandler {
 
     private final Registry registry;

@@ -11,7 +11,7 @@ import java.util.Map;
  * @param attributes 扩展属性（标签路由、灰度等）
  */
 @Builder
-@SuppressWarnings("all")
+@SuppressWarnings("ClassCanBeRecord")
 public class LoadBalancerContext {
     private final String serviceKey;
     private final String methodName;

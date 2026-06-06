@@ -6,7 +6,7 @@ import lombok.Getter;
  * 线程池运行指标快照，供 monitor 模块消费。
  */
 @Getter
-@SuppressWarnings("all")
+@SuppressWarnings("ClassCanBeRecord")
 public class Snapshot {
 
     private final String name;

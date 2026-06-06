@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
  * 优先使用预实例化的服务对象，否则通过 {@link LocalRegistry} 获取实现类并反射实例化。
  */
 @Slf4j
+@SuppressWarnings("ClassCanBeRecord")
 public class ServerInvoker implements RequestHandler {
 
     private final String serializerKey;

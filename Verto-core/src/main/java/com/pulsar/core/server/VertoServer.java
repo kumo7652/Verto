@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <h3>Verto 服务端</h3>
@@ -31,6 +34,7 @@ public class VertoServer implements Closeable {
     private final VertoConfig config;
     private final Registry registry;
     private final List<ServiceRegistration> services;
+    private ExecutorService businessPool;
     private NettyTransportServer transportServer;
 
     private VertoServer(Builder builder) {
@@ -52,9 +56,11 @@ public class VertoServer implements Closeable {
             log.info("服务已注册: {}", serviceName);
         }
 
+        businessPool = Executors.newFixedThreadPool(config.getBusinessThreads());
         ServerInvoker invoker = new ServerInvoker(config.getSerializer());
+        ThreadPoolRequestHandler handler = new ThreadPoolRequestHandler(invoker, businessPool);
         transportServer = new NettyTransportServer();
-        transportServer.start(buildTransportConfig(), invoker);
+        transportServer.start(buildTransportConfig(), handler);
         log.info("VertoServer 已启动, port={}", config.getServerPort());
         return this;
     }
@@ -70,6 +76,17 @@ public class VertoServer implements Closeable {
         }
         if (transportServer != null) {
             transportServer.stop();
+        }
+        if (businessPool != null) {
+            businessPool.shutdown();
+            try {
+                if (!businessPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    businessPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                businessPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

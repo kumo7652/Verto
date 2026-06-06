@@ -42,6 +42,9 @@ public class VertoConfig {
     /** 心跳超时（ms） */
     private long heartbeatTimeoutMs = 90000;
 
+    /** 业务线程池大小 */
+    private int businessThreads = 16;
+
     /**
      * 从 application.properties 加载，使用 "verto" 前缀。
      * 示例: verto.applicationName=my-app
