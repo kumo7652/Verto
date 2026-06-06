@@ -11,6 +11,23 @@ import java.util.Map;
  * @param attributes 扩展属性（标签路由、灰度等）
  */
 @Builder
-public record LoadBalancerContext(String serviceKey, String methodName,
-                                  Object[] arguments,
-                                  Map<String, String> attributes) {}
+@SuppressWarnings("all")
+public class LoadBalancerContext {
+    private final String serviceKey;
+    private final String methodName;
+    private final Object[] arguments;
+    private final Map<String, String> attributes;
+
+    public LoadBalancerContext(String serviceKey, String methodName,
+                               Object[] arguments, Map<String, String> attributes) {
+        this.serviceKey = serviceKey;
+        this.methodName = methodName;
+        this.arguments = arguments;
+        this.attributes = attributes;
+    }
+
+    public String serviceKey() { return serviceKey; }
+    public String methodName() { return methodName; }
+    public Object[] arguments() { return arguments; }
+    public Map<String, String> attributes() { return attributes; }
+}
