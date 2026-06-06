@@ -1,11 +1,14 @@
 package com.pulsar.transport.netty.client;
 
-import com.pulsar.model.RpcResponse;
+import com.pulsar.model.RemoteResponse;
 import com.pulsar.protocol.verto.PacketType;
 import com.pulsar.protocol.verto.VertoPacket;
+import com.pulsar.utils.RequestIdGenerator;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
@@ -18,14 +21,17 @@ import java.util.Objects;
  */
 @Slf4j
 @ChannelHandler.Sharable
-public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket<RpcResponse>> {
+public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket<RemoteResponse>> {
     private static final NettyClientHandler INSTANCE = new NettyClientHandler();
 
-    private final ResponseDispatcher dispatcher = ResponseDispatcher.getInstance();
-    private final ConnectionManager connectionManager = ConnectionManager.getInstance();
+    private final ResponseDispatcher dispatcher;
+    private final ConnectionManager connectionManager;
 
     private NettyClientHandler() {
         super(false);
+
+        dispatcher = ResponseDispatcher.getInstance();
+        connectionManager = ConnectionManager.getInstance();
     }
 
     public static NettyClientHandler getInstance() {
@@ -33,7 +39,7 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket<
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, VertoPacket<RpcResponse> packet) {
+    protected void channelRead0(ChannelHandlerContext ctx, VertoPacket<RemoteResponse> packet) {
         PacketType packetType = PacketType.fromValue(packet.getHeader().getType());
 
         switch (Objects.requireNonNull(packetType)) {
@@ -41,6 +47,22 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket<
             case HEARTBEAT -> log.debug("收到心跳响应, remote={}", ctx.channel().remoteAddress());
             case REQUEST -> log.warn("客户端收到 REQUEST 包，忽略");
             default -> log.warn("未知的包类型: {}", packetType);
+        }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        if (evt instanceof IdleStateEvent e) {
+            switch (e.state()) {
+                case READER_IDLE -> {
+                    log.warn("读超时, remote={}", ctx.channel().remoteAddress());
+                    dispatcher.closeChannel(ctx.channel(), new RuntimeException("读超时"));
+                    connectionManager.remove(ctx.channel());
+                    ctx.close();
+                }
+                case ALL_IDLE -> ctx.writeAndFlush(
+                        VertoPacket.heartbeat(RequestIdGenerator.nextId()));
+            }
         }
     }
 

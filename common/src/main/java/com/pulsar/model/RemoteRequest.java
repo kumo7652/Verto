@@ -15,7 +15,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RpcRequest implements Serializable {
+public class RemoteRequest implements Serializable {
     /**
      * 服务名称
      */

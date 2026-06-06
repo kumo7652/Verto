@@ -1,7 +1,7 @@
 package com.pulsar.transport.netty.server;
 
-import com.pulsar.model.RpcRequest;
-import com.pulsar.model.RpcResponse;
+import com.pulsar.model.RemoteRequest;
+import com.pulsar.model.RemoteResponse;
 import com.pulsar.protocol.verto.*;
 import com.pulsar.transport.RequestHandler;
 import com.pulsar.transport.config.TransportConfig;
@@ -20,7 +20,7 @@ import java.util.Objects;
  */
 @Slf4j
 @ChannelHandler.Sharable
-public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<RpcRequest>> {
+public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<RemoteRequest>> {
 
     private final RequestHandler requestHandler;
     private final TransportConfig config;
@@ -32,7 +32,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, VertoPacket<RpcRequest> requestPacket) {
+    protected void channelRead0(ChannelHandlerContext ctx, VertoPacket<RemoteRequest> requestPacket) {
         PacketType packetType = PacketType.fromValue(requestPacket.getHeader().getType());
 
         switch (Objects.requireNonNull(packetType)) {
@@ -43,14 +43,14 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<
         }
     }
 
-    private void handleRequest(ChannelHandlerContext ctx, VertoPacket<RpcRequest> requestPacket) {
+    private void handleRequest(ChannelHandlerContext ctx, VertoPacket<RemoteRequest> requestPacket) {
         long requestId = requestPacket.getHeader().getRequestId();
         try {
-            VertoPacket<RpcResponse> responsePacket = requestHandler.handle(requestPacket);
+            VertoPacket<RemoteResponse> responsePacket = requestHandler.handle(requestPacket);
             ctx.writeAndFlush(responsePacket);
         } catch (Exception e) {
             log.error("请求处理异常, requestId={}", requestId, e);
-            VertoPacket<RpcResponse> errorPacket = VertoPacket.fail(
+            VertoPacket<RemoteResponse> errorPacket = VertoPacket.fail(
                     requestId,
                     PacketStatus.SERVER_ERROR,
                     e.getMessage(),
@@ -60,7 +60,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<
         }
     }
 
-    private void handleHeartbeat(ChannelHandlerContext ctx, VertoPacket<RpcRequest> heartbeatPacket) {
+    private void handleHeartbeat(ChannelHandlerContext ctx, VertoPacket<RemoteRequest> heartbeatPacket) {
         long requestId = heartbeatPacket.getHeader().getRequestId();
         VertoPacket<Void> ack = VertoPacket.heartbeat(requestId);
         ctx.writeAndFlush(ack);

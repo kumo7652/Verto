@@ -1,7 +1,7 @@
 package com.pulsar.transport;
 
-import com.pulsar.model.RpcRequest;
-import com.pulsar.model.RpcResponse;
+import com.pulsar.model.RemoteRequest;
+import com.pulsar.model.RemoteResponse;
 import com.pulsar.protocol.verto.VertoPacket;
 
 /**
@@ -20,5 +20,5 @@ public interface RequestHandler {
      * @param request 收到的请求包（含 header、body）
      * @return 响应包
      */
-    VertoPacket<RpcResponse> handle(VertoPacket<RpcRequest> request);
+    VertoPacket<RemoteResponse> handle(VertoPacket<RemoteRequest> request);
 }

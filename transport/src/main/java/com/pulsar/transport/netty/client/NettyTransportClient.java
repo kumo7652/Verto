@@ -1,8 +1,9 @@
 package com.pulsar.transport.netty.client;
 
-import cn.hutool.core.util.IdUtil;
-import com.pulsar.model.RpcRequest;
-import com.pulsar.model.RpcResponse;
+import com.pulsar.model.ActiveCountProvider;
+import com.pulsar.model.RemoteRequest;
+import com.pulsar.utils.RequestIdGenerator;
+import com.pulsar.model.RemoteResponse;
 import com.pulsar.model.ServiceNode;
 import com.pulsar.protocol.verto.PacketType;
 import com.pulsar.protocol.verto.VertoPacket;
@@ -10,11 +11,13 @@ import com.pulsar.transport.config.TransportConfig;
 import com.pulsar.transport.netty.codec.VertoPacketDecoder;
 import com.pulsar.transport.netty.codec.VertoPacketEncoder;
 import io.netty.channel.Channel;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <h3>基于 Netty 的传输层客户端</h3>
@@ -22,17 +25,40 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class NettyTransportClient {
-    private final ConnectionManager connectionManager = ConnectionManager.getInstance();
-    private final ResponseDispatcher dispatcher = ResponseDispatcher.getInstance();
-    private final VertoPacketEncoder encoderHandler = new VertoPacketEncoder();
-    private final NettyClientHandler clientHandler = NettyClientHandler.getInstance();
+    /**
+     * 配置信息
+     */
     private final TransportConfig config;
 
-    /** 记录已初始化 pipeline 的 Channel */
+    /**
+     * 编码器
+     */
+    private final VertoPacketEncoder encoderHandler;
+
+    /**
+     * 连接管理与响应分发
+     */
+    private final ResponseDispatcher dispatcher;
+    private final ConnectionManager connectionManager;
+
+    /**
+     * 数据处理
+     */
+    private final NettyClientHandler clientHandler;
+
+    /**
+     * 记录已初始化 pipeline 的 Channel
+     */
     private final Set<Channel> initializedChannels = ConcurrentHashMap.newKeySet();
 
     public NettyTransportClient(TransportConfig config) {
         this.config = config;
+
+        encoderHandler = new VertoPacketEncoder();
+
+        connectionManager = ConnectionManager.getInstance();
+        dispatcher = ResponseDispatcher.getInstance();
+        clientHandler = NettyClientHandler.getInstance();
     }
 
     /**
@@ -40,37 +66,42 @@ public class NettyTransportClient {
      *
      * @param request       RPC 请求
      * @param serviceNode   目标服务节点
-     * @param serializerKey 序列化器别名
+     * @param serializer    序列化器别名
      * @return 异步响应 Future
      */
-    public CompletableFuture<RpcResponse> send(RpcRequest request, ServiceNode serviceNode, String serializerKey) {
-        long requestId = IdUtil.getSnowflakeNextId();
-        CompletableFuture<RpcResponse> future = dispatcher.register(requestId, config.getResponseTimeoutMs());
+    public CompletableFuture<RemoteResponse> send(RemoteRequest request, ServiceNode serviceNode, String serializer) {
+        long requestId = RequestIdGenerator.nextId();
         String host = serviceNode.getServiceHost();
         int port = serviceNode.getServicePort();
+        String endpoint = host + ":" + port;
+        CompletableFuture<RemoteResponse> future = dispatcher.register(requestId, config.getResponseTimeoutMs(), endpoint);
 
-        connectionManager.get(host, port)
-                .thenAccept(channel -> {
-                    registerPipeline(channel);
+        CompletableFuture<Channel> connection = connectionManager.get(host, port);
+        connection.thenAccept(channel -> {
+            registerPipeline(channel);
+            dispatcher.bindChannel(requestId, channel);
 
-                    try {
-                        VertoPacket<RpcRequest> packet = VertoPacket.create(
-                                PacketType.REQUEST,
-                                serializerKey,
-                                requestId,
-                                request
-                        );
-                        channel.writeAndFlush(packet);
-                    } catch (Exception e) {
-                        future.completeExceptionally(e);
-                    }
-                })
-                .exceptionally(ex -> {
-                    future.completeExceptionally(ex);
-                    return null;
-                });
+            try {
+                VertoPacket<RemoteRequest> packet = VertoPacket.create(
+                    PacketType.REQUEST,
+                    serializer,
+                    requestId,
+                    request
+                );
+                channel.writeAndFlush(packet);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        }).exceptionally(ex -> {
+            future.completeExceptionally(ex);
+            return null;
+        });
 
         return future;
+    }
+
+    public ActiveCountProvider getActiveCountProvider() {
+        return dispatcher.getActiveCountProvider();
     }
 
     /**
@@ -90,9 +121,15 @@ public class NettyTransportClient {
 
         if (channel.pipeline().get(VertoPacketDecoder.class) == null) {
             channel.pipeline()
-                    .addLast(new VertoPacketDecoder())
-                    .addLast(encoderHandler)
-                    .addLast(clientHandler);
+                .addLast(new VertoPacketDecoder()) // 解码器不能share
+                .addLast(encoderHandler)
+                .addLast(
+                    new IdleStateHandler(config.getHeartbeatTimeoutMs(),
+                        0,
+                        config.getHeartbeatIntervalMs(),
+                        TimeUnit.MILLISECONDS)
+                )
+                .addLast(clientHandler);
         }
     }
 }

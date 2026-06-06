@@ -1,7 +1,7 @@
 package com.pulsar.transport.netty.codec;
 
-import com.pulsar.model.RpcRequest;
-import com.pulsar.model.RpcResponse;
+import com.pulsar.model.RemoteRequest;
+import com.pulsar.model.RemoteResponse;
 import com.pulsar.protocol.ProtocolException;
 import com.pulsar.protocol.verto.PacketType;
 import com.pulsar.protocol.verto.VertoPacket;
@@ -13,6 +13,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <h3>Verto 协议解码器（Inbound）</h3>
@@ -82,50 +83,25 @@ public class VertoPacketDecoder extends ByteToMessageDecoder {
                 .contentLength(buffer.getInt(VertoPacketSpec.CONTENT_LENGTH_OFFSET))
                 .build();
 
-        if (header.getContentLength() > VertoPacketSpec.MAX_CONTENT_LENGTH) {
-            throw new ProtocolException("contentLength 超限: " + header.getContentLength()
-                    + ", 上限 " + VertoPacketSpec.MAX_CONTENT_LENGTH);
-        }
-
-        // 心跳帧无 body
-        if (isHeartbeat(header)) {
-            VertoPacket<Void> packet = new VertoPacket<>();
-            packet.setHeader(header);
-            return packet;
-        }
-
-        // 解码 body
-        int bodyLength = header.getContentLength();
-        if (bodyLength == 0) {
-            PacketType packetType = PacketType.fromValue(header.getType());
-            if (packetType == null) {
-                throw new ProtocolException("无效的帧类型: " + header.getType());
-            }
-            return createEmptyPacket(header, packetType);
-        }
-
-        byte[] bodyBytes = new byte[bodyLength];
+        byte[] bodyBytes = checkAllocateBody(header);
         buffer.getBytes(VertoPacketSpec.HEADER_LENGTH_V2, bodyBytes);
 
-        Serializer serializer = SerializerFactory.getInstance()
-                .getByCode(header.getSerializerCode());
+        Serializer serializer = SerializerFactory.getInstance().getByCode(header.getSerializerCode());
 
         PacketType packetType = PacketType.fromValue(header.getType());
-        if (packetType == null) {
-            throw new ProtocolException("无效的帧类型: " + header.getType());
-        }
+        Objects.requireNonNull(packetType);
 
         return switch (packetType) {
             case REQUEST -> {
-                RpcRequest request = serializer.deserialize(bodyBytes, RpcRequest.class);
-                VertoPacket<RpcRequest> packet = new VertoPacket<>();
+                RemoteRequest request = serializer.deserialize(bodyBytes, RemoteRequest.class);
+                VertoPacket<RemoteRequest> packet = new VertoPacket<>();
                 packet.setHeader(header);
                 packet.setBody(request);
                 yield packet;
             }
             case RESPONSE -> {
-                RpcResponse response = serializer.deserialize(bodyBytes, RpcResponse.class);
-                VertoPacket<RpcResponse> packet = new VertoPacket<>();
+                RemoteResponse response = serializer.deserialize(bodyBytes, RemoteResponse.class);
+                VertoPacket<RemoteResponse> packet = new VertoPacket<>();
                 packet.setHeader(header);
                 packet.setBody(response);
                 yield packet;
@@ -138,18 +114,24 @@ public class VertoPacketDecoder extends ByteToMessageDecoder {
         };
     }
 
-    private static VertoPacket<?> createEmptyPacket(VertoPacket.Header header, PacketType packetType) throws ProtocolException {
-        return switch (packetType) {
-            case HEARTBEAT -> {
-                VertoPacket<Void> packet = new VertoPacket<>();
-                packet.setHeader(header);
-                yield packet;
-            }
-            default -> throw new ProtocolException("非心跳包 body 长度为 0");
-        };
-    }
+    private static byte[] checkAllocateBody(VertoPacket.Header header) {
+        if (header.getContentLength() > VertoPacketSpec.MAX_CONTENT_LENGTH) {
+            throw new ProtocolException("contentLength 超限: " + header.getContentLength()
+                    + ", 上限 " + VertoPacketSpec.MAX_CONTENT_LENGTH);
+        }
 
-    private static boolean isHeartbeat(VertoPacket.Header header) {
-        return (header.getFlags() & VertoPacketSpec.FLAG_HEARTBEAT_NO_BODY) != 0;
+        // 解码 body
+        int bodyLength = header.getContentLength();
+        if (bodyLength == 0) {
+            PacketType packetType = PacketType.fromValue(header.getType());
+            if (packetType == null) {
+                throw new ProtocolException("无效的帧类型: " + header.getType());
+            }
+            if (packetType != PacketType.HEARTBEAT) {
+                throw new ProtocolException("非心跳包长度为0");
+            }
+        }
+
+        return new byte[bodyLength];
     }
 }

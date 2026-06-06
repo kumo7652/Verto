@@ -38,12 +38,6 @@
             <artifactId>jetcd-core</artifactId>
         </dependency>
 
-        <!-- 元数据中心实现 -->
-        <dependency>
-            <groupId>io.lettuce</groupId>
-            <artifactId>lettuce-core</artifactId>
-        </dependency>
-
         <!-- 本地缓存 -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

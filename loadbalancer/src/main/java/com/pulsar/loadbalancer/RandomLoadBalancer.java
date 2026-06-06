@@ -9,18 +9,10 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 @SpiExtension(name = "random")
-public class RandomLoadBalancer implements LoadBalancer {
+public class RandomLoadBalancer extends AbstractLoadBalancer {
 
     @Override
-    public Optional<ServiceNode> select(LoadBalancerContext context, List<ServiceNode> nodes) {
-        if (nodes == null || nodes.isEmpty()) {
-            return Optional.empty();
-        }
-
-        if (nodes.size() == 1) {
-            return Optional.of(nodes.get(0));
-        }
-
+    protected Optional<ServiceNode> doSelect(LoadBalancerContext context, List<ServiceNode> nodes) {
         int index = ThreadLocalRandom.current().nextInt(nodes.size());
         return Optional.of(nodes.get(index));
     }

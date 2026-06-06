@@ -60,6 +60,12 @@ public class ServiceNode {
     private Map<String, String> tags = new HashMap<>();
 
     /**
+     * 节点启动时间戳（ms），用于预热权重计算。0 表示无预热。
+     */
+    @Builder.Default
+    private long startTimestamp = 0;
+
+    /**
      * 获取服务键名
      */
     public String getServiceKey() {

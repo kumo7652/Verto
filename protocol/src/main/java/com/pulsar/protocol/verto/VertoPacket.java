@@ -1,6 +1,6 @@
 package com.pulsar.protocol.verto;
 
-import com.pulsar.model.RpcResponse;
+import com.pulsar.model.RemoteResponse;
 import com.pulsar.serializer.SerializerFactory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -78,26 +78,26 @@ public class VertoPacket<T> {
         return packet;
     }
 
-    public static VertoPacket<RpcResponse> success(long requestId, Object data,
-            Class<?> dataType, String serializerKey) {
-        RpcResponse response = RpcResponse.builder()
+    public static VertoPacket<RemoteResponse> success(long requestId, Object data,
+                                                      Class<?> dataType, String serializerKey) {
+        RemoteResponse response = RemoteResponse.builder()
                 .data(data)
                 .dataType(dataType)
                 .message("success")
                 .build();
-        VertoPacket<RpcResponse> packet = create(PacketType.RESPONSE, serializerKey, requestId, response);
+        VertoPacket<RemoteResponse> packet = create(PacketType.RESPONSE, serializerKey, requestId, response);
         packet.getHeader().setStatus((byte) PacketStatus.SUCCESS.getValue());
         return packet;
     }
 
-    public static VertoPacket<RpcResponse> fail(long requestId, PacketStatus status,
-            String message, String serializerKey) {
-        RpcResponse response = RpcResponse.builder()
+    public static VertoPacket<RemoteResponse> fail(long requestId, PacketStatus status,
+                                                   String message, String serializerKey) {
+        RemoteResponse response = RemoteResponse.builder()
             .data(null)
             .errorCode(String.valueOf(status.getValue()))
             .errorMessage(message)
             .build();
-        VertoPacket<RpcResponse> packet = create(PacketType.RESPONSE, serializerKey, requestId, response);
+        VertoPacket<RemoteResponse> packet = create(PacketType.RESPONSE, serializerKey, requestId, response);
         packet.getHeader().setStatus((byte) status.getValue());
         return packet;
     }

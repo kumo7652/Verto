@@ -13,5 +13,4 @@ import java.util.Map;
 @Builder
 public record LoadBalancerContext(String serviceKey, String methodName,
                                   Object[] arguments,
-                                  Map<String, String> attributes) {
-}
+                                  Map<String, String> attributes) {}

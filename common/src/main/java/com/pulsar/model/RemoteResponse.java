@@ -14,7 +14,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RpcResponse implements Serializable {
+public class RemoteResponse implements Serializable {
 
     /**
      * 响应数据

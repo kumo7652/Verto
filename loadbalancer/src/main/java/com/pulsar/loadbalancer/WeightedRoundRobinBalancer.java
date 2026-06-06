@@ -4,106 +4,79 @@ import com.pulsar.extension.SpiExtension;
 import com.pulsar.model.LoadBalancerContext;
 import com.pulsar.model.ServiceNode;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <h3>平滑加权轮询负载均衡器</h3>
  *
- * <p>采用 Nginx 风格平滑加权轮询算法，解决普通加权轮询在权重差异大时
- * 对高权重节点连续请求的"扎堆"问题。</p>
+ * <p>Nginx 风格平滑加权轮询算法：每轮各节点 currentWeight 累加静态 weight，
+ * 选 currentWeight 最大者，命中后减去总权重。</p>
  *
- * <p>算法步骤：</p>
- * <ol>
- *   <li>每轮每个节点的 currentWeight 累加自身静态 weight</li>
- *   <li>选出 currentWeight 最大的节点</li>
- *   <li>该节点的 currentWeight 减去本轮总权重</li>
- * </ol>
- *
- * <p>示例：权重 [5, 1, 1]，7 次选择的序列为 A, A, B, A, C, A, A，
- * 高权重节点 A 被均匀穿插而非连续命中 5 次后再轮到 B、C。</p>
- *
- * <p>线程安全：同一服务的选调用 synchronized 串行化，
- * 不同服务之间并发执行互不影响。</p>
+ * <p>并发安全：currentWeight 使用 AtomicInteger + CAS，无锁化。
+ * 参考 Dubbo RoundRobinLoadBalance。</p>
  */
 @SpiExtension(name = "weighted-round-robin")
-public class WeightedRoundRobinBalancer implements LoadBalancer {
+public class WeightedRoundRobinBalancer extends AbstractLoadBalancer {
 
-    private final ConcurrentHashMap<String, List<NodeState>> serviceStates = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentHashMap<String, NodeState>> serviceStates =
+            new ConcurrentHashMap<>();
 
     @Override
-    public Optional<ServiceNode> select(LoadBalancerContext context, List<ServiceNode> nodes) {
-        if (nodes == null || nodes.isEmpty()) {
-            return Optional.empty();
-        }
-        if (nodes.size() == 1) {
-            return Optional.of(nodes.get(0));
-        }
-
+    protected Optional<ServiceNode> doSelect(LoadBalancerContext context, List<ServiceNode> nodes) {
         String serviceKey = context.serviceKey();
-        List<NodeState> states = serviceStates.computeIfAbsent(serviceKey,
-                k -> new ArrayList<>());
+        ConcurrentHashMap<String, NodeState> stateMap = serviceStates.computeIfAbsent(
+                serviceKey, k -> new ConcurrentHashMap<>());
 
-        synchronized (states) {
-            // 同步节点列表：移除下线节点，加入新节点
-            syncStates(states, nodes);
-            if (states.isEmpty()) {
-                return Optional.empty();
-            }
-
-            int totalWeight = 0;
-            NodeState best = null;
-
-            // 每轮 currentWeight 累加静态 weight，选最大者
-            for (NodeState state : states) {
-                totalWeight += state.weight;
-                state.currentWeight += state.weight;
-                if (best == null || state.currentWeight > best.currentWeight) {
-                    best = state;
-                }
-            }
-
-            // 选中节点减去总权重，使其在下轮中优先级降低
-            best.currentWeight -= totalWeight;
-            return Optional.of(best.node);
+        // 同步节点列表：移除下线节点，加入新节点
+        for (ServiceNode node : nodes) {
+            String key = node.getServiceNodeKey();
+            stateMap.computeIfAbsent(key, k -> new NodeState(node, getWeight(node)));
         }
-    }
-
-    private void syncStates(List<NodeState> states, List<ServiceNode> nodes) {
-        states.removeIf(s -> {
+        stateMap.keySet().removeIf(key -> {
             for (ServiceNode node : nodes) {
-                if (node.getServiceNodeKey().equals(s.node.getServiceNodeKey())) {
+                if (node.getServiceNodeKey().equals(key)) {
                     return false;
                 }
             }
             return true;
         });
 
-        for (ServiceNode node : nodes) {
-            boolean found = false;
-            for (NodeState state : states) {
-                if (state.node.getServiceNodeKey().equals(node.getServiceNodeKey())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                states.add(new NodeState(node));
+        if (stateMap.isEmpty()) {
+            return Optional.empty();
+        }
+
+        int totalWeight = 0;
+        NodeState best = null;
+        int maxCurrent = Integer.MIN_VALUE;
+
+        for (NodeState state : stateMap.values()) {
+            totalWeight += state.weight;
+            int current = state.currentWeight.addAndGet(state.weight);
+            if (current > maxCurrent) {
+                maxCurrent = current;
+                best = state;
             }
         }
+
+        if (best != null) {
+            best.currentWeight.addAndGet(-totalWeight);
+            return Optional.of(best.node);
+        }
+        return Optional.empty();
     }
 
     private static class NodeState {
         final ServiceNode node;
         final int weight;
-        int currentWeight;
+        final AtomicInteger currentWeight;
 
-        NodeState(ServiceNode node) {
+        NodeState(ServiceNode node, int weight) {
             this.node = node;
-            this.weight = node.getWeight();
-            this.currentWeight = 0;
+            this.weight = weight;
+            this.currentWeight = new AtomicInteger(0);
         }
     }
 }

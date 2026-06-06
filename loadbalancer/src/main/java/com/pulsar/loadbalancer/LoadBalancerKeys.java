@@ -8,4 +8,5 @@ public final class LoadBalancerKeys {
     public static final String WEIGHTED_RANDOM = "weighted-random";
     public static final String WEIGHTED_ROUND_ROBIN = "weighted-round-robin";
     public static final String CONSISTENT_HASH = "consistent-hash";
+    public static final String LEAST_ACTIVE = "least-active";
 }
