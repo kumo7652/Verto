@@ -18,16 +18,26 @@ public class LoadBalancerContext {
     private final Object[] arguments;
     private final Map<String, String> attributes;
 
-    public LoadBalancerContext(String serviceKey, String methodName,
-                               Object[] arguments, Map<String, String> attributes) {
+    public LoadBalancerContext(String serviceKey, String methodName, Object[] arguments, Map<String, String> attributes) {
         this.serviceKey = serviceKey;
         this.methodName = methodName;
         this.arguments = arguments;
         this.attributes = attributes;
     }
 
-    public String serviceKey() { return serviceKey; }
-    public String methodName() { return methodName; }
-    public Object[] arguments() { return arguments; }
-    public Map<String, String> attributes() { return attributes; }
+    public String serviceKey() {
+        return serviceKey;
+    }
+
+    public String methodName() {
+        return methodName;
+    }
+
+    public Object[] arguments() {
+        return arguments;
+    }
+
+    public Map<String, String> attributes() {
+        return attributes;
+    }
 }

@@ -1,12 +1,12 @@
 package com.pulsar.core.client;
 
+import com.pulsar.annotation.VertoReference;
+import com.pulsar.config.VertoConfig;
 import com.pulsar.core.VertoBootstrap;
-import com.pulsar.core.config.VertoConfig;
 import com.pulsar.loadbalancer.LeastActiveLoadBalancer;
 import com.pulsar.loadbalancer.LoadBalancer;
 import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.registry.Registry;
-import com.pulsar.transport.config.TransportConfig;
 import com.pulsar.transport.netty.client.NettyTransportClient;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,11 +36,7 @@ public class VertoClient implements Closeable {
         this.config = builder.bootstrap.config();
         this.registry = builder.bootstrap.registry();
 
-        TransportConfig transportConfig = TransportConfig.builder()
-                .serializerKey(config.getSerializer())
-                .responseTimeoutMs(config.getResponseTimeoutMs())
-                .build();
-        this.transportClient = new NettyTransportClient(transportConfig);
+        this.transportClient = new NettyTransportClient(config.getTransport());
 
         this.loadBalancer = LoadBalancerFactory.getLoadBalancer(config.getLoadBalancer());
 
@@ -51,9 +47,22 @@ public class VertoClient implements Closeable {
     }
 
     public <T> T createProxy(Class<T> serviceInterface) {
+        return createProxy(serviceInterface, serviceInterface.getAnnotation(VertoReference.class));
+    }
+
+    public <T> T createProxy(Class<T> serviceInterface, VertoReference ref) {
+        String version = (ref != null && !ref.version().isEmpty()) ? ref.version() : config.getVersion();
+        String serializer = (ref != null && !ref.serializer().isEmpty()) ? ref.serializer() : config.getTransport().getSerializerKey();
+        long timeout = (ref != null && ref.timeout() > 0) ? ref.timeout() : config.getTransport().getResponseTimeoutMs();
+        int retries = ref != null ? ref.retries() : 0;
+
+        LoadBalancer lb = loadBalancer;
+        if (ref != null && !ref.loadBalancer().isEmpty()) {
+            lb = LoadBalancerFactory.getLoadBalancer(ref.loadBalancer());
+        }
+
         ClientInvocationHandler handler = new ClientInvocationHandler(
-                registry, loadBalancer, transportClient,
-                config.getSerializer(), config.getVersion()
+                registry, lb, transportClient, serializer, version, timeout, retries
         );
         return ServiceProxyFactory.create(serviceInterface, handler);
     }
@@ -63,6 +72,7 @@ public class VertoClient implements Closeable {
         transportClient.close();
     }
 
+    @SuppressWarnings("ClassCanBeRecord")
     public static class Builder {
         private final VertoBootstrap bootstrap;
 

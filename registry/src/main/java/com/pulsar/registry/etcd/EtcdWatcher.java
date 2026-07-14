@@ -63,10 +63,10 @@ class EtcdWatcher {
         this.kvClient = kvClient;
         this.watchClient = watchClient;
         this.requestTimeout = requestTimeout;
-        this.scheduler = (ScheduledExecutorService) ThreadPoolBuilder
+        this.scheduler = ThreadPoolBuilder
                 .forName(SCHEDULER_POOL_NAME)
-                .scheduled(2)
-                .build();
+                .coreThreads(2)
+                .buildScheduled();
         this.discoverExecutor = ThreadPoolBuilder
                 .forName(DISCOVER_POOL_NAME)
                 .coreThreads(2)

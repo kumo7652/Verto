@@ -1,6 +1,6 @@
 package com.pulsar.core.client;
 
-import com.pulsar.constant.NetworkConstant;
+import com.pulsar.exception.RpcException;
 import com.pulsar.exception.ServiceException;
 import com.pulsar.loadbalancer.LoadBalancer;
 import com.pulsar.model.LoadBalancerContext;
@@ -31,15 +31,20 @@ public class ClientInvocationHandler implements InvocationHandler {
     private final NettyTransportClient transportClient;
     private final String serializerKey;
     private final String serviceVersion;
+    private final long timeoutMs;
+    private final int retries;
 
     public ClientInvocationHandler(Registry registry, LoadBalancer loadBalancer,
                                    NettyTransportClient transportClient,
-                                   String serializerKey, String serviceVersion) {
+                                   String serializerKey, String serviceVersion,
+                                   long timeoutMs, int retries) {
         this.registry = registry;
         this.loadBalancer = loadBalancer;
         this.transportClient = transportClient;
         this.serializerKey = serializerKey;
         this.serviceVersion = serviceVersion;
+        this.timeoutMs = timeoutMs;
+        this.retries = retries;
     }
 
     @Override
@@ -72,8 +77,12 @@ public class ClientInvocationHandler implements InvocationHandler {
                 .build();
 
         RemoteResponse response = transportClient
-                .send(request, selected.get(), serializerKey)
-                .get(NetworkConstant.DEFAULT_RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            .send(request, selected.get(), serializerKey)
+            .get(timeoutMs, TimeUnit.MILLISECONDS);
+
+        if (response.getErrorCode() != null) {
+            throw new RpcException("服务端异常[" + response.getErrorCode() + "]: " + response.getErrorMessage());
+        }
 
         return response.getData();
     }

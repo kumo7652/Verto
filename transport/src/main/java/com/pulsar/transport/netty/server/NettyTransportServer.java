@@ -1,7 +1,7 @@
 package com.pulsar.transport.netty.server;
 
 import com.pulsar.transport.RequestHandler;
-import com.pulsar.transport.config.TransportConfig;
+import com.pulsar.config.TransportConfig;
 import com.pulsar.transport.netty.NettyEventLoopGroup;
 import com.pulsar.transport.netty.codec.VertoPacketDecoder;
 import com.pulsar.transport.netty.codec.VertoPacketEncoder;
@@ -11,6 +11,8 @@ import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.ExecutorService;
 
 /**
  * <h3>基于 Netty 的传输层服务端</h3>
@@ -28,12 +30,13 @@ public class NettyTransportServer {
      *
      * @param config         传输层配置
      * @param requestHandler 请求处理回调
+     * @param businessPool   业务线程池，用于派发 RPC 请求，避免阻塞 I/O 线程
      */
-    public void start(TransportConfig config, RequestHandler requestHandler) {
+    public void start(TransportConfig config, RequestHandler requestHandler, ExecutorService businessPool) {
         bossGroup = NettyEventLoopGroup.getBoss();
         workerGroup = NettyEventLoopGroup.getWorker();
 
-        NettyServerHandler serverHandler = new NettyServerHandler(requestHandler, config);
+        NettyServerHandler serverHandler = new NettyServerHandler(requestHandler, config, businessPool);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(bossGroup, workerGroup)

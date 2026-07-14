@@ -37,11 +37,6 @@ public class ServiceNode {
     private String serviceGroup;
 
     /**
-     * 接口全限定名
-     */
-    private String interfaceClass;
-
-    /**
      * 服务版本号
      */
     @Builder.Default
@@ -79,15 +74,5 @@ public class ServiceNode {
      */
     public String getServiceNodeKey() {
         return String.format("%s/%s@%s:%s", getServiceKey(), serviceName, serviceHost, servicePort);
-    }
-
-    /**
-     * 获取完整服务地址
-     */
-    public String getServiceAddress() {
-        if (serviceHost != null && !serviceHost.contains("http")) {
-            return String.format("http://%s:%s", serviceHost, servicePort);
-        }
-        return String.format("%s:%s", serviceHost, servicePort);
     }
 }

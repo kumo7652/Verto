@@ -1,15 +1,15 @@
 package com.pulsar.transport.netty.client;
 
+import com.pulsar.config.TransportConfig;
 import com.pulsar.model.ActiveCountProvider;
 import com.pulsar.model.RemoteRequest;
-import com.pulsar.utils.RequestIdGenerator;
 import com.pulsar.model.RemoteResponse;
 import com.pulsar.model.ServiceNode;
 import com.pulsar.protocol.verto.PacketType;
 import com.pulsar.protocol.verto.VertoPacket;
-import com.pulsar.transport.config.TransportConfig;
 import com.pulsar.transport.netty.codec.VertoPacketDecoder;
 import com.pulsar.transport.netty.codec.VertoPacketEncoder;
+import com.pulsar.utils.RequestIdGenerator;
 import io.netty.channel.Channel;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -64,9 +64,9 @@ public class NettyTransportClient {
     /**
      * <h3>发送 RPC 请求</h3>
      *
-     * @param request       RPC 请求
-     * @param serviceNode   目标服务节点
-     * @param serializer    序列化器别名
+     * @param request     RPC 请求
+     * @param serviceNode 目标服务节点
+     * @param serializer  序列化器别名
      * @return 异步响应 Future
      */
     public CompletableFuture<RemoteResponse> send(RemoteRequest request, ServiceNode serviceNode, String serializer) {

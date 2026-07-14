@@ -1,7 +1,7 @@
 package com.pulsar.registry.etcd;
 
 import com.pulsar.model.ServiceNode;
-import com.pulsar.registry.config.RegistryConfig;
+import com.pulsar.config.RegistryConfig;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.KV;

@@ -1,19 +1,18 @@
 package com.pulsar.utils;
 
 import cn.hutool.core.util.StrUtil;
-import com.pulsar.model.Snapshot;
-import lombok.extern.slf4j.Slf4j;
+import lombok.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
-@Slf4j
 public class ThreadPoolBuilder {
+    private static final Logger log = LoggerFactory.getLogger(ThreadPoolBuilder.class);
     // ========== 持有全局池索引和关闭钩子注册 ==========
     private static final Map<String, ExecutorService> POOLS = new ConcurrentHashMap<>();
     private static final AtomicBoolean HOOK_REGISTERED = new AtomicBoolean(false);
@@ -24,11 +23,10 @@ public class ThreadPoolBuilder {
     private int maximumThreads = Runtime.getRuntime().availableProcessors();
     private long keepAliveTime = 60L;
     private int queueSize = 1000;
-    private boolean scheduled = false;
-    private int scheduledThreads = 1;
+    private boolean daemon = false;
     private RejectedExecutionHandler rejectPolicy = new ThreadPoolExecutor.CallerRunsPolicy();
 
-    public ThreadPoolBuilder(String name) {
+    private ThreadPoolBuilder(String name) {
         this.name = name;
     }
 
@@ -36,7 +34,6 @@ public class ThreadPoolBuilder {
         if (StrUtil.isBlank(name)) {
             throw new IllegalArgumentException("thread pool name is blank");
         }
-
         return new ThreadPoolBuilder(name);
     }
 
@@ -60,50 +57,59 @@ public class ThreadPoolBuilder {
         return this;
     }
 
+    public ThreadPoolBuilder daemon(boolean daemon) {
+        this.daemon = daemon;
+        return this;
+    }
+
     public ThreadPoolBuilder rejectPolicy(RejectedExecutionHandler rejectPolicy) {
         this.rejectPolicy = rejectPolicy;
         return this;
     }
 
-    public ThreadPoolBuilder scheduled(int threads) {
-        this.scheduled = true;
-        this.scheduledThreads = threads;
-        return this;
+    // === build() — 普通线程池 ===
+    public ExecutorService build() {
+        BlockingQueue<Runnable> queue = queueSize > 0
+                ? new ArrayBlockingQueue<>(queueSize)
+                : new SynchronousQueue<>();
+
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                coreThreads,
+                maximumThreads,
+                keepAliveTime, TimeUnit.SECONDS,
+                queue,
+                new NamedThreadFactory(name, daemon),
+                rejectPolicy
+        );
+
+        register(pool, false);
+        return pool;
     }
 
-    // === build() — 创建 + 注册 + 挂关闭钩子 ===
-    public ExecutorService build() {
-        ExecutorService pool;
-
-        // 线程池类型是否为调度线程池
-        if (scheduled) {
-            pool = Executors.newScheduledThreadPool(scheduledThreads, new NamedThreadFactory(name));
-        } else {
-            // 使用有界的ArrayBlockingQueue
-            BlockingQueue<Runnable> queue = queueSize > 0
-                    ? new ArrayBlockingQueue<>(queueSize)
-                    : new SynchronousQueue<>();
-
-            // 创建线程池
-            pool = new ThreadPoolExecutor(
-                    coreThreads,
-                    maximumThreads,
-                    keepAliveTime, TimeUnit.SECONDS,
-                    queue,
-                    new NamedThreadFactory(name),
-                    new MonitoredPolicy(name, rejectPolicy)
-            );
+    // === buildScheduled() — 调度线程池 ===
+    public ScheduledExecutorService buildScheduled() {
+        ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(
+                coreThreads,
+                new NamedThreadFactory(name, daemon),
+                rejectPolicy
+        );
+        pool.setKeepAliveTime(keepAliveTime, TimeUnit.SECONDS);
+        if (coreThreads == 0) {
+            pool.allowCoreThreadTimeOut(true);
         }
 
+        register(pool, true);
+        return pool;
+    }
+
+    private void register(ExecutorService pool, boolean scheduled) {
         ExecutorService existing = POOLS.putIfAbsent(name, pool);
         if (existing != null) {
             pool.shutdownNow();
             throw new IllegalStateException("pool [" + name + "] already exists");
         }
-
         ensureShutdownHook();
-        log.info("pool [{}] created: scheduled={}, core={}, queue={}", name, scheduled, coreThreads, queueSize);
-        return pool;
+        log.info("pool [{}] created: scheduled={}, core={}", name, scheduled, coreThreads);
     }
 
     private static void ensureShutdownHook() {
@@ -143,67 +149,21 @@ public class ThreadPoolBuilder {
         }
     }
 
-    // ========== 指标快照 ==========
-
-    public static Snapshot snapshot(String name) {
-        ExecutorService pool = POOLS.get(name);
-        if (pool == null) return null;
-
-        if (pool instanceof ScheduledExecutorService) {
-            return Snapshot.scheduled(name);
-        }
-
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) pool;
-        RejectedExecutionHandler policy = executor.getRejectedExecutionHandler();
-        long rejected = policy instanceof MonitoredPolicy mp ? mp.rejectedCount.get() : -1;
-        return Snapshot.of(
-                name, executor.getActiveCount(), executor.getPoolSize(),
-                executor.getCorePoolSize(),
-                executor.getQueue().size(), executor.getQueue().remainingCapacity(),
-                executor.getCompletedTaskCount(),
-                rejected
-        );
-    }
-
-    public static List<Snapshot> allSnapshots() {
-        return POOLS.keySet().stream()
-                .map(ThreadPoolBuilder::snapshot)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    static class MonitoredPolicy implements RejectedExecutionHandler {
-        private final String poolName;
-        private final RejectedExecutionHandler delegate;
-        final AtomicLong rejectedCount = new AtomicLong(0);
-
-        MonitoredPolicy(String poolName, RejectedExecutionHandler delegate) {
-            this.poolName = poolName;
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            rejectedCount.incrementAndGet();
-            log.warn("pool [{}] rejected a task", poolName);
-            if (executor != null && !executor.isShutdown()) {
-                delegate.rejectedExecution(r, executor);
-            }
-        }
-    }
-
+    @SuppressWarnings("ClassCanBeRecord")
     private static class NamedThreadFactory implements ThreadFactory {
+        private static final AtomicInteger counter = new AtomicInteger(0);
         private final String namePrefix;
-        private final AtomicInteger counter = new AtomicInteger(0);
+        private final boolean daemon;
 
-        NamedThreadFactory(String namePrefix) {
+        NamedThreadFactory(String namePrefix, boolean daemon) {
             this.namePrefix = namePrefix;
+            this.daemon = daemon;
         }
 
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NonNull Runnable r) {
             Thread t = new Thread(r, namePrefix + "-" + counter.getAndIncrement());
-            t.setDaemon(false);
+            t.setDaemon(daemon);
             return t;
         }
     }

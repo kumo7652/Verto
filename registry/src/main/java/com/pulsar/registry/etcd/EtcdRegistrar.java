@@ -1,45 +1,57 @@
 package com.pulsar.registry.etcd;
 
+import cn.hutool.json.JSONUtil;
 import com.pulsar.exception.RegistryException;
 import com.pulsar.exception.RpcErrorCode;
 import com.pulsar.model.ServiceNode;
 import com.pulsar.utils.ThreadPoolBuilder;
-import cn.hutool.json.JSONUtil;
-import io.etcd.jetcd.*;
+import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.KV;
+import io.etcd.jetcd.Lease;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
 import io.etcd.jetcd.options.PutOption;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 class EtcdRegistrar {
-    /** etcd客户端 */
+    /**
+     * 重连线程池
+     */
+    private static final String SCHEDULER_POOL_NAME = "etcd-registrar";
+    /**
+     * etcd客户端
+     */
     private final KV kvClient;
     private final Lease leaseClient;
-
-    /** 重连线程池 */
-    private static final String SCHEDULER_POOL_NAME = "etcd-registrar";
     private final ScheduledExecutorService scheduler;
 
-    /** 请求超时时间 */
+    /**
+     * 请求超时时间
+     */
     private final long requestTimeout;
 
-    /** 节点对应租约上下文 */
+    /**
+     * 节点对应租约上下文
+     */
     private final Map<String, LeaseContext> nodeLeases = new ConcurrentHashMap<>();
 
     EtcdRegistrar(KV kvClient, Lease leaseClient, long requestTimeout) {
         this.kvClient = kvClient;
         this.leaseClient = leaseClient;
         this.requestTimeout = requestTimeout;
-        this.scheduler = (ScheduledExecutorService) ThreadPoolBuilder
-                .forName(SCHEDULER_POOL_NAME)
-                .scheduled(4)
-                .build();
+        this.scheduler = ThreadPoolBuilder
+            .forName(SCHEDULER_POOL_NAME)
+            .coreThreads(4)
+            .buildScheduled();
     }
 
     /**
@@ -51,8 +63,8 @@ class EtcdRegistrar {
      */
     void register(ServiceNode serviceNode) throws RegistryException {
         LeaseContext context = nodeLeases.computeIfAbsent(
-                serviceNode.getServiceNodeKey(),
-                key -> new LeaseContext(-1)
+            serviceNode.getServiceNodeKey(),
+            key -> new LeaseContext(-1)
         );
         writeNode(serviceNode, context);
     }
@@ -69,7 +81,7 @@ class EtcdRegistrar {
         ByteSequence key = ByteSequence.from(serviceKey, StandardCharsets.UTF_8);
 
         LeaseContext context = nodeLeases.remove(serviceNode.getServiceNodeKey());
-        if  (context != null && context.keepAliveFuture != null) {
+        if (context != null && context.keepAliveFuture != null) {
             context.keepAliveFuture.cancel(false);
         }
 
@@ -77,14 +89,13 @@ class EtcdRegistrar {
             kvClient.delete(key).get(requestTimeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             log.error("unregister service node failed", e);
-            throw new RegistryException(RpcErrorCode.UNREGISTER_FAILED,
-                    "unregister service node failed: " + e.getMessage());
+            throw new RegistryException(RpcErrorCode.UNREGISTER_FAILED, "unregister service node failed: " + e.getMessage());
         }
     }
 
     /**
      * <h3>销毁注册器</h3>
-     *
+     * <p>
      * 关闭所有节点的续约流、撤销租约并清理资源
      */
     void destroy() {
@@ -103,7 +114,7 @@ class EtcdRegistrar {
      * 申请租约、写入键值对并启动续约流，重连场景下会关闭旧续约流后重新建立
      *
      * @param serviceNode 节点信息
-     * @param context 该节点对应的租约上下文
+     * @param context     该节点对应的租约上下文
      * @throws RegistryException 申请租约或写入键值对失败
      */
     private void writeNode(ServiceNode serviceNode, LeaseContext context) throws RegistryException {
@@ -114,7 +125,7 @@ class EtcdRegistrar {
         long leaseId;
         try {
             leaseId = leaseClient.grant(EtcdConstants.DEFAULT_LEASE_TTL)
-                    .get(requestTimeout, TimeUnit.MILLISECONDS).getID();
+                .get(requestTimeout, TimeUnit.MILLISECONDS).getID();
         } catch (Exception e) {
             log.error("failed requesting lease: ", e);
 
@@ -123,16 +134,15 @@ class EtcdRegistrar {
                 nodeLeases.remove(serviceNode.getServiceNodeKey());
             }
             throw new RegistryException(RpcErrorCode.REGISTER_FAILED,
-                    "failed requesting lease: " + e.getMessage());
+                "failed requesting lease: " + e.getMessage());
         }
         context.leaseId = leaseId;
 
         // 写入键值对
         String serviceKey = EtcdConstants.ETCD_ROOT_PATH + serviceNode.getServiceNodeKey();
+        String serviceNodeJson = JSONUtil.toJsonPrettyStr(serviceNode);
         ByteSequence key = ByteSequence.from(serviceKey, StandardCharsets.UTF_8);
-        ByteSequence value = ByteSequence.from(
-                JSONUtil.toJsonPrettyStr(serviceNode), StandardCharsets.UTF_8);
-
+        ByteSequence value = ByteSequence.from(serviceNodeJson, StandardCharsets.UTF_8);
         PutOption putOption = PutOption.builder().withLeaseId(leaseId).build();
         try {
             kvClient.put(key, value, putOption).get(requestTimeout, TimeUnit.MILLISECONDS);
@@ -143,8 +153,7 @@ class EtcdRegistrar {
             if (!isReconnect) {
                 nodeLeases.remove(serviceNode.getServiceNodeKey());
             }
-            throw new RegistryException(RpcErrorCode.REGISTER_FAILED,
-                    "failed putting service info: " + e.getMessage());
+            throw new RegistryException(RpcErrorCode.REGISTER_FAILED, "failed putting service info: " + e.getMessage());
         }
 
         // 启动链式续约调度（链已自然终止，无需 cancel）
@@ -155,14 +164,15 @@ class EtcdRegistrar {
     /**
      * <h3>启动租约续约流</h3>
      * 注册续约回调，续约失败或流异常关闭时触发重连
+     *
      * @param serviceNode 节点信息
-     * @param context 该节点对应的租约上下文
+     * @param context     该节点对应的租约上下文
      */
     private void startKeepAlive(ServiceNode serviceNode, LeaseContext context) {
         context.keepAliveFuture = scheduler.schedule(
-                () -> renewLease(serviceNode, context),
-                EtcdConstants.DEFAULT_LEASE_TTL / 3,
-                TimeUnit.SECONDS
+            () -> renewLease(serviceNode, context),
+            EtcdConstants.DEFAULT_LEASE_TTL / 3,
+            TimeUnit.SECONDS
         );
     }
 
@@ -183,7 +193,7 @@ class EtcdRegistrar {
         // 尝试续约
         try {
             LeaseKeepAliveResponse response = leaseClient.keepAliveOnce(leaseId)
-                    .get(requestTimeout, TimeUnit.MILLISECONDS);
+                .get(requestTimeout, TimeUnit.MILLISECONDS);
 
             if (response.getTTL() > 0) {
                 log.info("节点[{}]续约成功，TTL: {}s", nodeKey, response.getTTL());
@@ -244,17 +254,22 @@ class EtcdRegistrar {
      * 维护单个节点的租约ID、续约调度句柄和退避状态
      */
     private static class LeaseContext {
-        /** 当前租约 ID */
-        volatile long leaseId;
-
-        /** 续约调度 Future，用于取消 */
-        volatile ScheduledFuture<?> keepAliveFuture;
-
-        /** 退避延迟（毫秒），成功后续约时重置 */
+        /**
+         * 退避延迟（毫秒），成功后续约时重置
+         */
         final AtomicLong backoff = new AtomicLong(EtcdConstants.RECONNECT_INITIAL_DELAY_MS);
-
-        /** 全量重注册已尝试次数（达上限后放弃） */
+        /**
+         * 全量重注册已尝试次数（达上限后放弃）
+         */
         final AtomicInteger reconnectAttempts = new AtomicInteger(0);
+        /**
+         * 当前租约 ID
+         */
+        volatile long leaseId;
+        /**
+         * 续约调度 Future，用于取消
+         */
+        volatile ScheduledFuture<?> keepAliveFuture;
 
         LeaseContext(long leaseId) {
             this.leaseId = leaseId;
@@ -275,9 +290,10 @@ class EtcdRegistrar {
          * @return 本次调度应使用的退避延迟（毫秒）
          */
         long backoff() {
-            return backoff.getAndUpdate(current ->
-                    Math.min((long) (current * EtcdConstants.RECONNECT_MULTIPLIER),
-                            EtcdConstants.RECONNECT_MAX_DELAY_MS));
+            return backoff.getAndUpdate(current -> {
+                long delay = (long) (current * EtcdConstants.RECONNECT_MULTIPLIER);
+                return Math.min(delay, EtcdConstants.RECONNECT_MAX_DELAY_MS);
+            });
         }
 
         /**

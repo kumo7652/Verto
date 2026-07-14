@@ -1,20 +1,18 @@
 package com.pulsar.core.server;
 
+import com.pulsar.config.VertoConfig;
 import com.pulsar.core.VertoBootstrap;
-import com.pulsar.core.config.VertoConfig;
 import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.Registry;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.transport.config.TransportConfig;
 import com.pulsar.transport.netty.server.NettyTransportServer;
+import com.pulsar.utils.ThreadPoolBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * <h3>Verto 服务端</h3>
@@ -34,7 +32,6 @@ public class VertoServer implements Closeable {
     private final VertoConfig config;
     private final Registry registry;
     private final List<ServiceRegistration> services;
-    private ExecutorService businessPool;
     private NettyTransportServer transportServer;
 
     private VertoServer(Builder builder) {
@@ -49,19 +46,23 @@ public class VertoServer implements Closeable {
     public VertoServer start() {
         for (ServiceRegistration reg : services) {
             String serviceName = reg.getServiceName();
-            ServiceNode node = buildServiceNode(serviceName);
+            ServiceNode node = buildServiceNode(reg);
 
-            LocalRegistry.register(serviceName, reg.getImplClass());
+            LocalRegistry.register(serviceName, reg.getImplInstance());
             registry.register(node);
             log.info("服务已注册: {}", serviceName);
         }
 
-        businessPool = Executors.newFixedThreadPool(config.getBusinessThreads());
-        ServerInvoker invoker = new ServerInvoker(config.getSerializer());
-        ThreadPoolRequestHandler handler = new ThreadPoolRequestHandler(invoker, businessPool);
+        ExecutorService businessPool = ThreadPoolBuilder
+            .forName("verto-business")
+            .coreThreads(config.getBusinessThreads())
+            .maximumThreads(config.getBusinessThreads())
+            .build();
+
+        ServerInvoker invoker = new ServerInvoker(config.getTransport().getSerializerKey());
         transportServer = new NettyTransportServer();
-        transportServer.start(buildTransportConfig(), handler);
-        log.info("VertoServer 已启动, port={}", config.getServerPort());
+        transportServer.start(config.getTransport(), invoker, businessPool);
+        log.info("VertoServer 已启动, port={}, threads={}", config.getTransport().getPort(), config.getBusinessThreads());
         return this;
     }
 
@@ -69,43 +70,27 @@ public class VertoServer implements Closeable {
     public void close() {
         for (ServiceRegistration reg : services) {
             try {
-                registry.unregister(buildServiceNode(reg.getServiceName()));
+                registry.unregister(buildServiceNode(reg));
             } catch (Exception e) {
-                log.warn("反注册失败: {}", reg.getServiceName(), e);
+                log.warn("服务注销失败: {}", reg.getServiceName(), e);
             }
         }
         if (transportServer != null) {
             transportServer.stop();
         }
-        if (businessPool != null) {
-            businessPool.shutdown();
-            try {
-                if (!businessPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    businessPool.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                businessPool.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+        ThreadPoolBuilder.shutdown("verto-business");
     }
 
-    private ServiceNode buildServiceNode(String serviceName) {
+    private ServiceNode buildServiceNode(ServiceRegistration reg) {
+        String version = reg.getVersion() != null ? reg.getVersion() : config.getVersion();
         return ServiceNode.builder()
-                .serviceName(serviceName)
-                .serviceHost(config.getServerHost())
-                .servicePort(config.getServerPort())
-                .serviceVersion(config.getVersion())
-                .build();
-    }
-
-    private TransportConfig buildTransportConfig() {
-        return TransportConfig.builder()
-                .port(config.getServerPort())
-                .serializerKey(config.getSerializer())
-                .heartbeatIntervalMs(config.getHeartbeatIntervalMs())
-                .heartbeatTimeoutMs(config.getHeartbeatTimeoutMs())
-                .build();
+            .serviceName(reg.getServiceName())
+            .serviceHost(config.getServerHost())
+            .servicePort(config.getTransport().getPort())
+            .serviceVersion(version)
+            .serviceGroup(reg.getGroup())
+            .weight(reg.getWeight())
+            .build();
     }
 
     public static class Builder {
@@ -117,7 +102,11 @@ public class VertoServer implements Closeable {
         }
 
         public Builder addService(Class<?> interfaceClass, Class<?> implClass) {
-            services.add(new ServiceRegistration(interfaceClass, implClass));
+            try {
+                services.add(new ServiceRegistration(interfaceClass, implClass));
+            } catch (Exception e) {
+                throw new RuntimeException("添加服务失败");
+            }
             return this;
         }
 
@@ -127,7 +116,7 @@ public class VertoServer implements Closeable {
         }
 
         public Builder port(int port) {
-            bootstrap.config().setServerPort(port);
+            bootstrap.config().getTransport().setPort(port);
             return this;
         }
 

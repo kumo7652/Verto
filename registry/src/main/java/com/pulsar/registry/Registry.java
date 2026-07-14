@@ -2,7 +2,7 @@ package com.pulsar.registry;
 
 import com.pulsar.exception.RegistryException;
 import com.pulsar.model.ServiceNode;
-import com.pulsar.registry.config.RegistryConfig;
+import com.pulsar.config.RegistryConfig;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

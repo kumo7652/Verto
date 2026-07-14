@@ -39,5 +39,5 @@ public class RemoteRequest implements Serializable {
     /**
      * 服务版本号
      */
-    private String serviceVersion =  RpcConstant.DEFAULT_SERVICE_VERSION;
+    private String serviceVersion;
 }

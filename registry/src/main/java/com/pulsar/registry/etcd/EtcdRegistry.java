@@ -4,7 +4,7 @@ import com.pulsar.exception.RegistryException;
 import com.pulsar.extension.SpiExtension;
 import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.Registry;
-import com.pulsar.registry.config.RegistryConfig;
+import com.pulsar.config.RegistryConfig;
 import io.etcd.jetcd.*;
 import lombok.extern.slf4j.Slf4j;
 

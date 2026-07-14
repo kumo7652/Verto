@@ -4,6 +4,7 @@ import com.pulsar.extension.SpiExtension;
 import com.pulsar.model.ActiveCountProvider;
 import com.pulsar.model.LoadBalancerContext;
 import com.pulsar.model.ServiceNode;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +20,11 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <p>{@link ActiveCountProvider} 通过 setter 注入，未注入时退化为纯随机。</p>
  */
+@Setter
 @SpiExtension(name = "least-active")
 public class LeastActiveLoadBalancer extends AbstractLoadBalancer {
 
     private volatile ActiveCountProvider activeCountProvider;
-
-    public void setActiveCountProvider(ActiveCountProvider provider) {
-        this.activeCountProvider = provider;
-    }
 
     @Override
     protected Optional<ServiceNode> doSelect(LoadBalancerContext context, List<ServiceNode> nodes) {

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "source": "modelscope.cn",
+      "sourceType": "well-known",
+      "computedHash": "e8118284a6365753790d44bb2758a6032b3af27fa84696428d9233f2be0f4e78"
+    },
+    "self-improving-agent": {
+      "source": "modelscope.cn",
+      "sourceType": "well-known",
+      "computedHash": "aeaea071a2d738688f585a0d83314f6ed0809ebdfa1f4ff5df483ce613fd8cb3"
+    },
+    "skill-creator": {
+      "source": "modelscope.cn",
+      "sourceType": "well-known",
+      "computedHash": "b0818700436c3cf2a09bde7a9a9e3511c6db1bbbc2938753eb6bbd6f36f9f48f"
+    }
+  }
+}

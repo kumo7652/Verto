@@ -7,7 +7,6 @@ import com.pulsar.utils.RequestIdGenerator;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,8 +59,7 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket<
                     connectionManager.remove(ctx.channel());
                     ctx.close();
                 }
-                case ALL_IDLE -> ctx.writeAndFlush(
-                        VertoPacket.heartbeat(RequestIdGenerator.nextId()));
+                case ALL_IDLE -> ctx.writeAndFlush(VertoPacket.heartbeat(RequestIdGenerator.nextId()));
             }
         }
     }

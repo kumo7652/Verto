@@ -4,13 +4,15 @@ import com.pulsar.model.RemoteRequest;
 import com.pulsar.model.RemoteResponse;
 import com.pulsar.protocol.verto.*;
 import com.pulsar.transport.RequestHandler;
-import com.pulsar.transport.config.TransportConfig;
+import com.pulsar.config.TransportConfig;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * <h3>服务端业务处理器</h3>
@@ -24,11 +26,13 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<
 
     private final RequestHandler requestHandler;
     private final TransportConfig config;
+    private final ExecutorService businessPool;
 
-    public NettyServerHandler(RequestHandler requestHandler, TransportConfig config) {
+    public NettyServerHandler(RequestHandler requestHandler, TransportConfig config, ExecutorService businessPool) {
         super(false);  // 不自动释放，由上游 ByteToMessageDecoder 管理
         this.requestHandler = requestHandler;
         this.config = config;
+        this.businessPool = Objects.requireNonNull(businessPool, "businessPool must not be null");
     }
 
     @Override
@@ -46,17 +50,29 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket<
     private void handleRequest(ChannelHandlerContext ctx, VertoPacket<RemoteRequest> requestPacket) {
         long requestId = requestPacket.getHeader().getRequestId();
         try {
-            VertoPacket<RemoteResponse> responsePacket = requestHandler.handle(requestPacket);
-            ctx.writeAndFlush(responsePacket);
-        } catch (Exception e) {
-            log.error("请求处理异常, requestId={}", requestId, e);
-            VertoPacket<RemoteResponse> errorPacket = VertoPacket.fail(
+            businessPool.execute(() -> {
+                try {
+                    VertoPacket<RemoteResponse> responsePacket = requestHandler.handle(requestPacket);
+                    ctx.writeAndFlush(responsePacket);
+                } catch (Exception e) {
+                    log.error("请求处理异常, requestId={}", requestId, e);
+                    VertoPacket<RemoteResponse> errorPacket = VertoPacket.fail(
+                            requestId,
+                            PacketStatus.SERVER_ERROR,
+                            e.getMessage(),
+                            config.getSerializerKey()
+                    );
+                    ctx.writeAndFlush(errorPacket);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            log.error("Business Pool shutdown (requestId={}): {}", requestId, e.toString());
+            ctx.writeAndFlush(VertoPacket.fail(
                     requestId,
                     PacketStatus.SERVER_ERROR,
-                    e.getMessage(),
+                    "服务正在关闭",
                     config.getSerializerKey()
-            );
-            ctx.writeAndFlush(errorPacket);
+            ));
         }
     }
 

@@ -3,9 +3,9 @@ package com.pulsar.transport.netty.client;
 import com.pulsar.model.ActiveCountProvider;
 import com.pulsar.model.RemoteResponse;
 import com.pulsar.protocol.verto.VertoPacket;
-import lombok.extern.slf4j.Slf4j;
-
+import com.pulsar.utils.ThreadPoolBuilder;
 import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class ResponseDispatcher {
     private static final ResponseDispatcher INSTANCE = new ResponseDispatcher();
+    private static final String SCHEDULER_POOL_NAME = "response-dispatcher";
 
     private final ScheduledExecutorService scheduler;
     private final Map<Long, Channel> requestChannels;
@@ -26,10 +27,13 @@ public class ResponseDispatcher {
     private final ConcurrentHashMap<String, AtomicInteger> activeCounts;
 
     private ResponseDispatcher() {
-        scheduler = Executors.newSingleThreadScheduledExecutor();
         requestWindow = new ConcurrentHashMap<>();
         requestChannels = new ConcurrentHashMap<>();
         activeCounts = new ConcurrentHashMap<>();
+        scheduler = ThreadPoolBuilder
+            .forName(SCHEDULER_POOL_NAME)
+            .coreThreads(1)
+            .buildScheduled();
     }
 
     public static ResponseDispatcher getInstance() {
@@ -115,7 +119,7 @@ public class ResponseDispatcher {
     }
 
     public void shutdown() {
-        scheduler.shutdown();
+        ThreadPoolBuilder.shutdown(SCHEDULER_POOL_NAME);
     }
 
     public ActiveCountProvider getActiveCountProvider() {

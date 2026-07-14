@@ -26,8 +26,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer {
         return doSelect(context, nodes);
     }
 
-    protected abstract Optional<ServiceNode> doSelect(
-            LoadBalancerContext context, List<ServiceNode> nodes);
+    protected abstract Optional<ServiceNode> doSelect(LoadBalancerContext context, List<ServiceNode> nodes);
 
     /**
      * 计算权重，含二次方预热曲线。

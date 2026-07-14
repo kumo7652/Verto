@@ -1,6 +1,6 @@
 package com.pulsar.core;
 
-import com.pulsar.core.config.VertoConfig;
+import com.pulsar.config.VertoConfig;
 import com.pulsar.core.client.VertoClient;
 import com.pulsar.core.server.VertoServer;
 import com.pulsar.registry.Registry;

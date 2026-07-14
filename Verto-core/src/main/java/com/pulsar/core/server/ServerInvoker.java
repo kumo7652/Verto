@@ -32,15 +32,14 @@ public class ServerInvoker implements RequestHandler {
         String serviceName = request.getServiceName();
 
         try {
-            Class<?> implClass = LocalRegistry.get(serviceName);
-            if (implClass == null) {
+            Object impl = LocalRegistry.get(serviceName);
+            if (impl == null) {
                 log.warn("服务未找到: {}", serviceName);
                 return VertoPacket.fail(requestId, PacketStatus.SERVICE_NOT_FOUND,
                         "服务未找到: " + serviceName, serializerKey);
             }
 
-            Object impl = implClass.getConstructor().newInstance();
-            Method method = implClass.getMethod(request.getMethodName(), request.getParameterTypes());
+            Method method = impl.getClass().getMethod(request.getMethodName(), request.getParameterTypes());
             Object result = method.invoke(impl, request.getParameters());
 
             Class<?> returnType = method.getReturnType();

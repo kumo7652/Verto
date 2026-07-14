@@ -38,7 +38,7 @@ public interface ServiceCache {
      * @param serviceKey 服务标识
      * @return 节点列表，不存在时返回 null
      */
-    List<ServiceNode>  get(String serviceKey);
+    List<ServiceNode> get(String serviceKey);
 
     /**
      * 失效单个服务的缓存

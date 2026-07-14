@@ -29,21 +29,21 @@ public class VertoPacketEncoder extends MessageToByteEncoder<VertoPacket<?>> {
             bodyBytes = new byte[0];
         } else {
             Serializer serializer = SerializerFactory.getInstance()
-                    .getByCode(header.getSerializerCode());
+                .getByCode(header.getSerializerCode());
             bodyBytes = serializer.serialize(packet.getBody());
         }
 
         header.setContentLength(bodyBytes.length);
 
         // 2. 写入固定头部 (18B)
-        out.writeByte(header.getMagic())            // 0
-           .writeByte(header.getVersion())          // 1
-           .writeByte(header.getFlags())            // 2
-           .writeByte(header.getSerializerCode())   // 3
-           .writeByte(header.getType())             // 4
-           .writeByte(header.getStatus())           // 5
-           .writeLong(header.getRequestId())        // 6-13
-           .writeInt(bodyBytes.length);             // 14-17
+        out.writeByte(header.getMagic())             // 0
+            .writeByte(header.getVersion())          // 1
+            .writeByte(header.getFlags())            // 2
+            .writeByte(header.getSerializerCode())   // 3
+            .writeByte(header.getType())             // 4
+            .writeByte(header.getStatus())           // 5
+            .writeLong(header.getRequestId())        // 6-13
+            .writeInt(header.getContentLength());    // 14-17
 
         // 3. 写入 body
         if (bodyBytes.length > 0) {
