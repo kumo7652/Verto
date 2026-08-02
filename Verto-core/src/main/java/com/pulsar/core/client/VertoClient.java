@@ -1,13 +1,13 @@
 package com.pulsar.core.client;
 
+import com.pulsar.LoadBalancer;
 import com.pulsar.annotation.VertoReference;
 import com.pulsar.config.VertoConfig;
 import com.pulsar.core.VertoBootstrap;
 import com.pulsar.loadbalancer.LeastActiveLoadBalancer;
-import com.pulsar.loadbalancer.LoadBalancer;
 import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.registry.Registry;
-import com.pulsar.transport.netty.client.NettyTransportClient;
+import com.pulsar.remoting.transport.netty.client.NettyTransportClient;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
@@ -41,8 +41,8 @@ public class VertoClient implements Closeable {
         this.loadBalancer = LoadBalancerFactory.getLoadBalancer(config.getLoadBalancer());
 
         if (loadBalancer instanceof LeastActiveLoadBalancer leastActive) {
-            leastActive.setActiveCountProvider(transportClient.getActiveCountProvider());
-            log.info("ActiveCountProvider 已注入 LeastActiveLoadBalancer");
+            leastActive.setActiveCounter(transportClient.getActiveCounter());
+            log.info("ActiveCounter 已注入 LeastActiveLoadBalancer");
         }
     }
 
@@ -62,7 +62,7 @@ public class VertoClient implements Closeable {
         }
 
         ClientInvocationHandler handler = new ClientInvocationHandler(
-                registry, lb, transportClient, serializer, version, timeout, retries
+            registry, lb, transportClient, serializer, version, timeout, retries
         );
         return ServiceProxyFactory.create(serviceInterface, handler);
     }

@@ -1,5 +1,6 @@
 package com.pulsar.loadbalancer;
 
+import com.pulsar.LoadBalancer;
 import com.pulsar.model.LoadBalancerContext;
 import com.pulsar.model.ServiceNode;
 

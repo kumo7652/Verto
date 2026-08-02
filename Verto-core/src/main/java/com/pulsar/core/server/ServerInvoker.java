@@ -1,22 +1,23 @@
 package com.pulsar.core.server;
 
-import com.pulsar.model.RemoteRequest;
-import com.pulsar.model.RemoteResponse;
-import com.pulsar.protocol.verto.PacketStatus;
-import com.pulsar.protocol.verto.VertoPacket;
+import com.pulsar.remoting.protocol.PacketStatus;
+import com.pulsar.core.protocol.RemoteRequest;
+import com.pulsar.core.protocol.RemoteResponse;
+import com.pulsar.remoting.protocol.VertoPacket;
+import com.pulsar.serializer.Serializer;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.transport.RequestHandler;
+import com.pulsar.serializer.SerializerFactory;
+import com.pulsar.remoting.transport.RequestHandler;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 /**
  * <h3>服务端请求调用器</h3>
  * 实现传输层的 {@link RequestHandler}，负责：查本地注册表 → 反射调用 → 封包响应。
- * 优先使用预实例化的服务对象，否则通过 {@link LocalRegistry} 获取实现类并反射实例化。
  */
 @Slf4j
-@SuppressWarnings("ClassCanBeRecord")
 public class ServerInvoker implements RequestHandler {
 
     private final String serializerKey;
@@ -26,37 +27,81 @@ public class ServerInvoker implements RequestHandler {
     }
 
     @Override
-    public VertoPacket<RemoteResponse> handle(VertoPacket<RemoteRequest> requestPacket) {
-        RemoteRequest request = requestPacket.getBody();
+    public VertoPacket handle(VertoPacket requestPacket) {
+        byte code = SerializerFactory.getInstance().getCodeByName(serializerKey);
+        Serializer serializer = SerializerFactory.getInstance().getByCode(code);
         long requestId = requestPacket.getHeader().getRequestId();
+
+        RemoteRequest request;
+        try {
+            request = serializer.deserialize(requestPacket.getBodyBytes(), RemoteRequest.class);
+        } catch (IOException e) {
+            log.error("请求反序列化失败, requestId={}", requestId, e);
+            return buildEmptyError(requestId, PacketStatus.SERVER_ERROR);
+        }
         String serviceName = request.getServiceName();
 
         try {
             Object impl = LocalRegistry.get(serviceName);
             if (impl == null) {
                 log.warn("服务未找到: {}", serviceName);
-                return VertoPacket.fail(requestId, PacketStatus.SERVICE_NOT_FOUND,
-                        "服务未找到: " + serviceName, serializerKey);
+                return buildError(serializer, requestId, PacketStatus.SERVICE_NOT_FOUND,
+                        "服务未找到: " + serviceName);
             }
 
             Method method = impl.getClass().getMethod(request.getMethodName(), request.getParameterTypes());
             Object result = method.invoke(impl, request.getParameters());
 
             Class<?> returnType = method.getReturnType();
-            if (returnType == void.class || returnType == Void.class) {
-                return VertoPacket.success(requestId, null, Void.class, serializerKey);
-            }
-            return VertoPacket.success(requestId, result, returnType, serializerKey);
+            return buildSuccess(serializer, requestId, result, returnType);
 
         } catch (NoSuchMethodException e) {
             log.error("方法未找到: {}#{}", serviceName, request.getMethodName(), e);
-            return VertoPacket.fail(requestId, PacketStatus.METHOD_NOT_FOUND,
-                    "方法未找到: " + request.getMethodName(), serializerKey);
+            return buildError(serializer, requestId, PacketStatus.METHOD_NOT_FOUND,
+                    "方法未找到: " + request.getMethodName());
         } catch (Exception e) {
             log.error("服务调用异常: {}#{}", serviceName, request.getMethodName(), e);
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            return VertoPacket.fail(requestId, PacketStatus.SERVER_ERROR,
-                    cause.getMessage(), serializerKey);
+            return buildError(serializer, requestId, PacketStatus.SERVER_ERROR, cause.getMessage());
         }
+    }
+
+    private VertoPacket buildSuccess(Serializer serializer, long requestId, Object data, Class<?> dataType) {
+        byte code = SerializerFactory.getInstance().getCodeByName(serializerKey);
+        VertoPacket.Header header = VertoPacket.responseHeader(requestId, code);
+        RemoteResponse response = RemoteResponse.builder()
+                .data(data)
+                .dataType(dataType)
+                .message("success")
+                .build();
+        try {
+            return new VertoPacket(header, serializer.serialize(response));
+        } catch (IOException e) {
+            log.error("响应序列化失败, requestId={}", requestId, e);
+            return buildEmptyError(requestId, PacketStatus.SERVER_ERROR);
+        }
+    }
+
+    private VertoPacket buildError(Serializer serializer, long requestId, PacketStatus status, String message) {
+        byte code = SerializerFactory.getInstance().getCodeByName(serializerKey);
+        VertoPacket.Header header = VertoPacket.responseHeader(requestId, code);
+        header.setStatus((byte) status.getValue());
+        RemoteResponse response = RemoteResponse.builder()
+                .errorCode(String.valueOf(status.getValue()))
+                .errorMessage(message)
+                .build();
+        try {
+            return new VertoPacket(header, serializer.serialize(response));
+        } catch (IOException e) {
+            log.error("响应序列化失败, requestId={}", requestId, e);
+            return buildEmptyError(requestId, PacketStatus.SERVER_ERROR);
+        }
+    }
+
+    private VertoPacket buildEmptyError(long requestId, PacketStatus status) {
+        byte code = SerializerFactory.getInstance().getCodeByName(serializerKey);
+        VertoPacket.Header header = VertoPacket.responseHeader(requestId, code);
+        header.setStatus((byte) status.getValue());
+        return new VertoPacket(header, new byte[0]);
     }
 }

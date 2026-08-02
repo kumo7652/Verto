@@ -5,7 +5,7 @@ import com.pulsar.core.VertoBootstrap;
 import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.Registry;
 import com.pulsar.registry.local.LocalRegistry;
-import com.pulsar.transport.netty.server.NettyTransportServer;
+import com.pulsar.remoting.transport.netty.server.NettyTransportServer;
 import com.pulsar.utils.ThreadPoolBuilder;
 import lombok.extern.slf4j.Slf4j;
 

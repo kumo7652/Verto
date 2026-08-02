@@ -1,7 +1,7 @@
 package com.pulsar.loadbalancer;
 
 import com.pulsar.extension.SpiExtension;
-import com.pulsar.model.ActiveCountProvider;
+import com.pulsar.model.ActiveCounter;
 import com.pulsar.model.LoadBalancerContext;
 import com.pulsar.model.ServiceNode;
 import lombok.Setter;
@@ -18,17 +18,17 @@ import java.util.concurrent.ThreadLocalRandom;
  * 参考 Dubbo LeastActiveLoadBalance：选出 active 最小的一组节点，
  * 在该组内按权重随机选择。</p>
  *
- * <p>{@link ActiveCountProvider} 通过 setter 注入，未注入时退化为纯随机。</p>
+ * <p>{@link ActiveCounter} 通过 setter 注入，未注入时退化为纯随机。</p>
  */
 @Setter
 @SpiExtension(name = "least-active")
 public class LeastActiveLoadBalancer extends AbstractLoadBalancer {
 
-    private volatile ActiveCountProvider activeCountProvider;
+    private volatile ActiveCounter activeCounter;
 
     @Override
     protected Optional<ServiceNode> doSelect(LoadBalancerContext context, List<ServiceNode> nodes) {
-        ActiveCountProvider provider = this.activeCountProvider;
+        ActiveCounter provider = this.activeCounter;
         if (provider == null) {
             int index = ThreadLocalRandom.current().nextInt(nodes.size());
             return Optional.of(nodes.get(index));

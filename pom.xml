@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,8 +13,7 @@
     <modules>
         <module>common</module>
         <module>serializer</module>
-        <module>protocol</module>
-        <module>transport</module>
+        <module>remoting</module>
         <module>registry</module>
         <module>loadbalancer</module>
         <module>resilience</module>
@@ -45,6 +44,7 @@
         <spring-boot.version>4.0.3</spring-boot.version>
         <junit.version>4.13.2</junit.version>
         <spotbugs.version>4.9.8.1</spotbugs.version>
+        <dubbo.version>3.0.13</dubbo.version>
     </properties>
 
     <dependencyManagement>
@@ -62,12 +62,7 @@
             </dependency>
             <dependency>
                 <groupId>com.pulsar</groupId>
-                <artifactId>protocol</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.pulsar</groupId>
-                <artifactId>transport</artifactId>
+                <artifactId>remoting</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -175,6 +170,12 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo</artifactId>
+                <version>${dubbo.version}</version>
+                <scope>compile</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
