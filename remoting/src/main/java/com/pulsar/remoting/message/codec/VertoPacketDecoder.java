@@ -1,8 +1,8 @@
-package com.pulsar.remoting.transport.netty.codec;
+package com.pulsar.remoting.message.codec;
 
-import com.pulsar.remoting.protocol.ProtocolException;
-import com.pulsar.remoting.protocol.VertoPacket;
-import com.pulsar.remoting.protocol.VertoPacketSpec;
+import com.pulsar.remoting.message.ProtocolException;
+import com.pulsar.remoting.message.VertoPacket;
+import com.pulsar.remoting.message.VertoPacketSpec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;

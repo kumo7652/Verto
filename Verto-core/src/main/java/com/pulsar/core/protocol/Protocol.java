@@ -1,6 +1,6 @@
 package com.pulsar.core.protocol;
 
-import com.pulsar.remoting.transport.netty.client.NettyTransportClient;
+import com.pulsar.remoting.exchange.ExchangeClient;
 
 /**
  * <h3>协议抽象接口</h3>
@@ -23,5 +23,5 @@ public interface Protocol {
     /**
      * 服务引用：创建远程调用器
      */
-    Caller refer(NettyTransportClient transportClient, String serializerKey, long timeoutMs);
+    Caller refer(ExchangeClient exchangeClient, String serializerKey, long timeoutMs);
 }

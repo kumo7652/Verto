@@ -8,6 +8,7 @@ import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.Registry;
 import com.pulsar.core.protocol.verto.VertoProtocol;
 import com.pulsar.remoting.transport.netty.server.NettyTransportServer;
+import com.pulsar.remoting.transport.netty.server.VertoServerChannelConfigurer;
 import com.pulsar.utils.ThreadPoolBuilder;
 
 import java.io.Closeable;
@@ -64,8 +65,10 @@ public class VertoServer implements Closeable {
             .build();
 
         ServerInvoker invoker = new ServerInvoker(protocol);
+        VertoServerChannelConfigurer pipelineConfigurer =
+                new VertoServerChannelConfigurer(invoker, config.getTransport(), businessPool);
         transportServer = new NettyTransportServer();
-        transportServer.start(config.getTransport(), invoker, businessPool);
+        transportServer.start(config.getTransport(), pipelineConfigurer);
         log.info("VertoServer 已启动, port={}, threads={}", config.getTransport().getPort(), config.getBusinessThreads());
         return this;
     }

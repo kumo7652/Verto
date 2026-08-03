@@ -1,6 +1,6 @@
-package com.pulsar.remoting.transport.netty.codec;
+package com.pulsar.remoting.message.codec;
 
-import com.pulsar.remoting.protocol.VertoPacket;
+import com.pulsar.remoting.message.VertoPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -30,13 +30,13 @@ public class VertoPacketEncoder extends MessageToByteEncoder<VertoPacket> {
 
         // 写入固定头部 (18B)
         out.writeByte(header.getMagic())
-           .writeByte(header.getVersion())
-           .writeByte(header.getFlags())
-           .writeByte(header.getSerializerCode())
-           .writeByte(header.getType())
-           .writeByte(header.getStatus())
-           .writeLong(header.getRequestId())
-           .writeInt(bodyBytes.length);
+            .writeByte(header.getVersion())
+            .writeByte(header.getFlags())
+            .writeByte(header.getSerializerCode())
+            .writeByte(header.getType())
+            .writeByte(header.getStatus())
+            .writeLong(header.getRequestId())
+            .writeInt(bodyBytes.length);
 
         // 写入 body
         if (bodyBytes.length > 0) {

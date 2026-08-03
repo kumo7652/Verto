@@ -11,7 +11,9 @@ import com.pulsar.core.protocol.verto.VertoProtocol;
 import com.pulsar.loadbalancer.LeastActiveLoadBalancer;
 import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.registry.Registry;
+import com.pulsar.remoting.exchange.ExchangeClient;
 import com.pulsar.remoting.transport.netty.client.NettyTransportClient;
+import com.pulsar.remoting.transport.netty.client.VertoClientChannelConfigurer;
 
 import java.io.Closeable;
 
@@ -36,6 +38,7 @@ public class VertoClient implements Closeable {
     private final VertoConfig config;
     private final Registry registry;
     private final NettyTransportClient transportClient;
+    private final ExchangeClient exchangeClient;
     private final LoadBalancer loadBalancer;
     private final VertoProtocol protocol;
 
@@ -43,13 +46,14 @@ public class VertoClient implements Closeable {
         this.config = builder.bootstrap.config();
         this.registry = builder.bootstrap.registry();
 
-        this.transportClient = new NettyTransportClient(config.getTransport());
+        this.transportClient = new NettyTransportClient(config.getTransport(), new VertoClientChannelConfigurer(config.getTransport()));
+        this.exchangeClient = new ExchangeClient(transportClient);
         this.protocol = new VertoProtocol(config.getTransport().getSerializerKey());
 
         this.loadBalancer = LoadBalancerFactory.getLoadBalancer(config.getLoadBalancer());
 
         if (loadBalancer instanceof LeastActiveLoadBalancer leastActive) {
-            leastActive.setActiveCounter(transportClient.getActiveCounter());
+            leastActive.setActiveCounter(exchangeClient.getActiveCounter());
             log.info("ActiveCounter 已注入 LeastActiveLoadBalancer");
         }
     }
@@ -69,7 +73,7 @@ public class VertoClient implements Closeable {
             lb = LoadBalancerFactory.getLoadBalancer(ref.loadBalancer());
         }
 
-        Caller invoker = protocol.refer(transportClient, serializer, timeout);
+        Caller invoker = protocol.refer(exchangeClient, serializer, timeout);
         ClientInvocationHandler handler = new ClientInvocationHandler(
             registry, lb, invoker, version, retries
         );
@@ -78,7 +82,7 @@ public class VertoClient implements Closeable {
 
     @Override
     public void close() {
-        transportClient.close();
+        exchangeClient.close();
     }
 
     @SuppressWarnings("ClassCanBeRecord")

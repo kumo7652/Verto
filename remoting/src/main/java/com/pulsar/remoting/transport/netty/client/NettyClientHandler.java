@@ -1,14 +1,15 @@
 package com.pulsar.remoting.transport.netty.client;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.pulsar.remoting.protocol.PacketType;
-import com.pulsar.remoting.protocol.VertoPacket;
+import com.pulsar.remoting.exchange.ResponseDispatcher;
+import com.pulsar.remoting.message.PacketType;
+import com.pulsar.remoting.message.VertoPacket;
 import com.pulsar.utils.RequestIdGenerator;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
@@ -43,7 +44,7 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket>
         PacketType packetType = PacketType.fromValue(packet.getHeader().getType());
 
         switch (Objects.requireNonNull(packetType)) {
-            case RESPONSE -> dispatcher.dispatch(packet);
+            case RESPONSE -> dispatcher.complete(packet.getHeader().getRequestId(), packet.getBodyBytes());
             case HEARTBEAT -> log.debug("收到心跳响应, remote={}", ctx.channel().remoteAddress());
             case REQUEST -> log.warn("客户端收到 REQUEST 包，忽略");
             default -> log.warn("未知的包类型: {}", packetType);

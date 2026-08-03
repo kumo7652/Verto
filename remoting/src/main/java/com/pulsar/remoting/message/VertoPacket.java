@@ -1,4 +1,4 @@
-package com.pulsar.remoting.protocol;
+package com.pulsar.remoting.message;
 
 import lombok.*;
 

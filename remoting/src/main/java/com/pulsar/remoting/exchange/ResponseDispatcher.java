@@ -1,11 +1,10 @@
-package com.pulsar.remoting.transport.netty.client;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package com.pulsar.remoting.exchange;
 
 import com.pulsar.model.ActiveCounter;
-import com.pulsar.remoting.protocol.VertoPacket;
 import com.pulsar.utils.ThreadPoolBuilder;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -15,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * <h3>请求-响应匹配分发器（单例）</h3>
  * 根据 requestId 将响应匹配到对应的 CompletableFuture。
+ * 位于交换层：配对、超时、活跃计数均与具体协议无关。
  */
 public class ResponseDispatcher {
 
@@ -97,16 +97,15 @@ public class ResponseDispatcher {
     }
 
     /**
-     * <h3>收到响应时分发</h3>
+     * <h3>收到响应时按 requestId 完成对应 Future（协议无关）</h3>
      */
-    public void dispatch(VertoPacket packet) {
-        long requestId = packet.getHeader().getRequestId();
+    public void complete(long requestId, byte[] body) {
         CompletableFuture<byte[]> future = requestWindow.get(requestId);
         if (future == null) {
             log.warn("收到未知 requestId 的响应: {}", requestId);
             return;
         }
-        future.complete(packet.getBodyBytes());
+        future.complete(body);
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.pulsar.remoting.transport;
 
-import com.pulsar.remoting.protocol.VertoPacket;
+import com.pulsar.remoting.message.VertoPacket;
 
 /**
  * <h3>请求处理回调接口</h3>

@@ -2,43 +2,35 @@ package com.pulsar.remoting.transport.netty.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.pulsar.remoting.transport.RequestHandler;
 import com.pulsar.config.TransportConfig;
+import com.pulsar.remoting.transport.ChannelPipelineConfigurer;
 import com.pulsar.remoting.transport.netty.NettyEventLoopGroup;
-import com.pulsar.remoting.transport.netty.codec.VertoPacketDecoder;
-import com.pulsar.remoting.transport.netty.codec.VertoPacketEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-import java.util.concurrent.ExecutorService;
-
 /**
  * <h3>基于 Netty 的传输层服务端</h3>
- * 负责启动 TCP 监听、组装 Pipeline（VertoPacketDecoder → VertoPacketEncoder → NettyServerHandler）、
- * 以及优雅关闭
+ * 负责启动 TCP 监听、将 pipeline 装配委托给 {@link ChannelPipelineConfigurer}、以及优雅关闭。
+ * 不再直接依赖任何帧格式（VertoPacket / 未来的 HTTP），实现传输与协议解耦。
  */
 public class NettyTransportServer {
 
     private static final Logger log = LoggerFactory.getLogger(NettyTransportServer.class);
-    private final VertoPacketEncoder encoderHandler = new VertoPacketEncoder();
     private MultiThreadIoEventLoopGroup bossGroup;
     private MultiThreadIoEventLoopGroup workerGroup;
 
     /**
      * <h3>启动服务端</h3>
      *
-     * @param config         传输层配置
-     * @param requestHandler 请求处理回调
-     * @param businessPool   业务线程池，用于派发 RPC 请求，避免阻塞 I/O 线程
+     * @param config             传输层配置
+     * @param pipelineConfigurer 协议提供的 pipeline 装配器（编解码器 + 业务 handler）
      */
-    public void start(TransportConfig config, RequestHandler requestHandler, ExecutorService businessPool) {
+    public void start(TransportConfig config, ChannelPipelineConfigurer pipelineConfigurer) {
         bossGroup = NettyEventLoopGroup.getBoss();
         workerGroup = NettyEventLoopGroup.getWorker();
-
-        NettyServerHandler serverHandler = new NettyServerHandler(requestHandler, config, businessPool);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(bossGroup, workerGroup)
@@ -46,10 +38,7 @@ public class NettyTransportServer {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) {
-                        ch.pipeline()
-                          .addLast(new VertoPacketDecoder())
-                          .addLast(encoderHandler)
-                          .addLast(serverHandler);
+                        pipelineConfigurer.configure(ch.pipeline());
                     }
                 });
 
