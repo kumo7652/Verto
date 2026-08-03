@@ -1,8 +1,9 @@
 package com.pulsar.spring.processor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.annotation.VertoReference;
-import com.pulsar.core.client.VertoClient;
-import lombok.extern.slf4j.Slf4j;
+import com.pulsar.core.consumer.VertoClient;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -15,11 +16,14 @@ import org.springframework.util.ReflectionUtils;
  * 扫描所有 Bean 中标注 {@link VertoReference} 的字段，
  * 通过 {@link VertoClient#createProxy} 创建 RPC 动态代理并注入。
  *
- * <p>若 Bean 已被 AOP 代理（如 {@code @Transactional} JDK 动态代理），
+ * <p>若 Bean 已被 AOP 代理（如 {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoReferencePostProcessor.class);@code @Transactional} JDK 动态代理），
  * 字段取原始类、注入到原始对象——因为 JDK 代理不承载字段。
  */
-@Slf4j
 public class VertoReferencePostProcessor implements BeanPostProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoReferencePostProcessor.class);
 
     private final VertoClient vertoClient;
 

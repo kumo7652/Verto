@@ -1,4 +1,6 @@
 package com.pulsar.registry.etcd;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.exception.RegistryException;
 import com.pulsar.extension.SpiExtension;
@@ -6,15 +8,15 @@ import com.pulsar.model.ServiceNode;
 import com.pulsar.registry.Registry;
 import com.pulsar.config.RegistryConfig;
 import io.etcd.jetcd.*;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@Slf4j
 @SpiExtension(name = "etcd")
 public class EtcdRegistry implements Registry {
+
+    private static final Logger log = LoggerFactory.getLogger(EtcdRegistry.class);
     private volatile Client client;
     private volatile EtcdRegistrar registrar;
     private volatile EtcdWatcher watcher;

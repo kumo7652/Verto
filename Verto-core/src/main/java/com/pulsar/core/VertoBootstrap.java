@@ -1,11 +1,12 @@
 package com.pulsar.core;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.config.VertoConfig;
-import com.pulsar.core.client.VertoClient;
-import com.pulsar.core.server.VertoServer;
+import com.pulsar.core.consumer.VertoClient;
+import com.pulsar.core.provider.VertoServer;
 import com.pulsar.registry.Registry;
 import com.pulsar.registry.RegistryFactory;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
 
@@ -14,7 +15,9 @@ import java.io.Closeable;
  * 管理共享组件（Registry）生命周期，
  * 提供 {@link VertoServer} 和 {@link VertoClient} 的构建入口。
  *
- * <pre>{@code
+ * <pre>{
+
+    private static final Logger log = LoggerFactory.getLogger(VertoBootstrap.class);@code
  * VertoConfig config = VertoConfig.fromProperties();
  * VertoBootstrap bootstrap = VertoBootstrap.create(config);
  *
@@ -26,8 +29,9 @@ import java.io.Closeable;
  * HelloService service = client.createProxy(HelloService.class);
  * }</pre>
  */
-@Slf4j
 public class VertoBootstrap implements Closeable {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoBootstrap.class);
 
     private final VertoConfig config;
     private final Registry registry;

@@ -1,4 +1,4 @@
-package com.pulsar.core.client;
+package com.pulsar.core.consumer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;

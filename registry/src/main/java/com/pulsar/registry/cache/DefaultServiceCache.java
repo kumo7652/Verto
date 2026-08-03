@@ -1,10 +1,11 @@
 package com.pulsar.registry.cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.pulsar.model.ServiceNode;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,9 @@ import java.util.concurrent.TimeUnit;
  * <h3>双层缓存架构</h3>
  * <ul>
  *   <li>主缓存（Caffeine）：serviceKey → List&lt;ServiceNode&gt;，提供 TTL 过期、容量淘汰、统计</li>
- *   <li>节点索引（ConcurrentHashMap）：serviceKey → {nodeKey → ServiceNode}，支持 O(1) 增量更新</li>
+ *   <li>节点索引（ConcurrentHashMap）：serviceKey → {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultServiceCache.class);nodeKey → ServiceNode}，支持 O(1) 增量更新</li>
  * </ul>
  *
  * <h3>为何需要二级索引</h3>
@@ -33,8 +36,9 @@ import java.util.concurrent.TimeUnit;
  * @see ServiceCache 缓存接口
  * @see CacheConfig 缓存配置
  */
-@Slf4j
 public class DefaultServiceCache implements ServiceCache {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultServiceCache.class);
 
     /**
      * 主缓存：Caffeine 提供 TTL 过期、容量淘汰、统计能力

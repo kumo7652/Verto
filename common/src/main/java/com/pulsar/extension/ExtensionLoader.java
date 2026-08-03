@@ -1,7 +1,9 @@
 package com.pulsar.extension;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.pulsar.constant.RpcConstant;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -17,8 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 配置文件格式：每行一个全限定类名
  * 元数据通过 @SpiExtension 注解声明
  */
-@Slf4j
 public class ExtensionLoader {
+
+    private static final Logger log = LoggerFactory.getLogger(ExtensionLoader.class);
     /**
      * 存储已加载的类：接口名 => (name => 实现类)
      */

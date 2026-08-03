@@ -10,7 +10,6 @@ import java.util.Map;
 
 /**
  * <h3>RPC 响应默认实现</h3>
- * 参考 Dubbo {@code RpcResult} 字段设计。
  */
 @Data
 @Builder

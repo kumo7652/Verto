@@ -1,10 +1,11 @@
 package com.pulsar.spring.processor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.annotation.VertoService;
-import com.pulsar.core.server.ServiceRegistration;
+import com.pulsar.core.provider.ServiceRegistration;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -19,18 +20,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 收集为 {@link ServiceRegistration} 列表。
  *
  * <p>本处理器只负责<b>收集</b>，真正的注册与 Netty 监听由
- * {@code VertoServerLifecycle} 在所有 Bean 初始化完成后统一触发——
- * 因为 {@code VertoServer.start()} 是"先注册全部服务再开始监听"的模型。
+ * {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoServicePostProcessor.class);@code VertoServerLifecycle} 在所有 Bean 初始化完成后统一触发——
+ * 因为 {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoServicePostProcessor.class);@code VertoServer.start()} 是"先注册全部服务再开始监听"的模型。
  *
- * <p>注意：Bean 在此阶段可能已被其他 BPP 包装为代理（如 {@code @Transactional}）。
+ * <p>注意：Bean 在此阶段可能已被其他 BPP 包装为代理（如 {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoServicePostProcessor.class);@code @Transactional}）。
  * 类信息通过 {@link AopUtils#getTargetClass} 穿透代理读取，
  * 但存入 {@link ServiceRegistration} 的实例必须通过
  * {@link AopProxyUtils#getSingletonTarget} 还原为原始对象——
  * 否则 RPC 调用会多一层不必要的 AOP 代理链。
  */
-@Slf4j
 @Getter
 public class VertoServicePostProcessor implements BeanPostProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoServicePostProcessor.class);
 
     private final List<ServiceRegistration> registrations = new CopyOnWriteArrayList<>();
 

@@ -1,11 +1,12 @@
 package com.pulsar.remoting.transport.netty.client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.remoting.transport.netty.NettyEventLoopGroup;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -17,8 +18,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * 每个 endpoint (host:port) 只维持一条 TCP 长连接。
  * 所有并发请求共享同一条 Channel，通过 requestId 区分各自的响应。
  */
-@Slf4j
 public class ConnectionManager {
+
+    private static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
     private static final ConnectionManager INSTANCE = new ConnectionManager();
 
     private final Bootstrap bootstrap;

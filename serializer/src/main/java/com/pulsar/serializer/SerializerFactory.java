@@ -1,7 +1,8 @@
 package com.pulsar.serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.extension.ExtensionLoader;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.Set;
@@ -10,8 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 序列化器注册表 - 基于 SPI 懒加载单例
  */
-@Slf4j
 public class SerializerFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(SerializerFactory.class);
     private static volatile SerializerFactory INSTANCE;
 
     private final Map<Byte, String> codeToName = new ConcurrentHashMap<>();

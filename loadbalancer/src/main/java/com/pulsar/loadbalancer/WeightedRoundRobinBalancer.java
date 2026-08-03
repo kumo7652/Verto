@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 选 currentWeight 最大者，命中后减去总权重。</p>
  *
  * <p>并发安全：currentWeight 使用 AtomicInteger + CAS，无锁化。
- * 参考 Dubbo RoundRobinLoadBalance。</p>
+ * </p>
  */
 @SpiExtension(name = "weighted-round-robin")
 public class WeightedRoundRobinBalancer extends AbstractLoadBalancer {

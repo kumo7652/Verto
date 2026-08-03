@@ -2,7 +2,7 @@ package com.pulsar.loadbalancer;
 
 /**
  * <h3>MurmurHash3 32bit 实现</h3>
- * 用于一致性哈希虚拟节点的哈希计算，参考 Dubbo MurmurHash3。
+ * 用于一致性哈希虚拟节点的哈希计算。
  */
 final class MurmurHash3 {
 

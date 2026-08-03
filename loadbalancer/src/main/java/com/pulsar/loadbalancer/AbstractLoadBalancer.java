@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * <h3>负载均衡器抽象基类</h3>
  * 模板方法模式：统一处理空列表/单节点边界情况，
- * 并提供权重预热计算（参考 Dubbo AbstractLoadBalance）。
+ * 并提供权重预热计算。
  */
 public abstract class AbstractLoadBalancer implements LoadBalancer {
 
@@ -31,7 +31,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer {
 
     /**
      * 计算权重，含二次方预热曲线。
-     * uptime² / warmup² × weight，参考 Dubbo AbstractLoadBalance.getWeight()。
+     * uptime² / warmup² × weight。
      */
     protected int getWeight(ServiceNode node) {
         int weight = node.getWeight();

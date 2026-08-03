@@ -1,4 +1,6 @@
 package com.pulsar.registry.etcd;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.hutool.json.JSONUtil;
 import com.pulsar.exception.RegistryException;
@@ -10,7 +12,6 @@ import io.etcd.jetcd.KV;
 import io.etcd.jetcd.Lease;
 import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
 import io.etcd.jetcd.options.PutOption;
-import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -21,8 +22,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Slf4j
 class EtcdRegistrar {
+
+    private static final Logger log = LoggerFactory.getLogger(EtcdRegistrar.class);
     /**
      * 重连线程池
      */

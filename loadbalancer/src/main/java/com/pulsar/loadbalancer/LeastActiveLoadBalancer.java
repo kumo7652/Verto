@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <h3>最小活跃数负载均衡器</h3>
  *
  * <p>选择当前活跃请求数最少的节点，自动避开过载或慢节点。
- * 参考 Dubbo LeastActiveLoadBalance：选出 active 最小的一组节点，
+ * 选出 active 最小的一组节点，
  * 在该组内按权重随机选择。</p>
  *
  * <p>{@link ActiveCounter} 通过 setter 注入，未注入时退化为纯随机。</p>

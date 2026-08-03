@@ -1,4 +1,6 @@
 package com.pulsar.remoting.transport.netty.client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.config.TransportConfig;
 import com.pulsar.model.ActiveCounter;
@@ -10,7 +12,6 @@ import com.pulsar.remoting.transport.netty.codec.VertoPacketEncoder;
 import com.pulsar.utils.RequestIdGenerator;
 import io.netty.channel.Channel;
 import io.netty.handler.timeout.IdleStateHandler;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -21,8 +22,9 @@ import java.util.concurrent.TimeUnit;
  * <h3>基于 Netty 的传输层客户端</h3>
  * 发送 RPC 请求，通过 {@link ResponseDispatcher} 进行请求-响应匹配。
  */
-@Slf4j
 public class NettyTransportClient {
+
+    private static final Logger log = LoggerFactory.getLogger(NettyTransportClient.class);
     /**
      * 配置信息
      */

@@ -1,4 +1,6 @@
 package com.pulsar.remoting.transport.netty.client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.remoting.protocol.PacketType;
 import com.pulsar.remoting.protocol.VertoPacket;
@@ -7,7 +9,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
@@ -17,9 +18,10 @@ import java.util.Objects;
  * RESPONSE → 交给 {@link ResponseDispatcher} 完成对应 Future；
  * HEARTBEAT → 记录心跳响应
  */
-@Slf4j
 @ChannelHandler.Sharable
 public class NettyClientHandler extends SimpleChannelInboundHandler<VertoPacket> {
+
+    private static final Logger log = LoggerFactory.getLogger(NettyClientHandler.class);
     private static final NettyClientHandler INSTANCE = new NettyClientHandler();
 
     private final ResponseDispatcher dispatcher;

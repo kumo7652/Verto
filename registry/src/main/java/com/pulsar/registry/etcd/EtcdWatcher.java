@@ -1,4 +1,6 @@
 package com.pulsar.registry.etcd;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
@@ -14,7 +16,6 @@ import io.etcd.jetcd.options.GetOption;
 import io.etcd.jetcd.options.WatchOption;
 import io.etcd.jetcd.watch.WatchEvent;
 import io.etcd.jetcd.watch.WatchResponse;
-import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -36,8 +37,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * </ul>
  * </p>
  */
-@Slf4j
 class EtcdWatcher {
+
+    private static final Logger log = LoggerFactory.getLogger(EtcdWatcher.class);
     /** etcd客户端 */
     private final KV kvClient;
     private final Watch watchClient;

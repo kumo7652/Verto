@@ -1,14 +1,17 @@
-package com.pulsar.core.client;
+package com.pulsar.core.consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.LoadBalancer;
 import com.pulsar.annotation.VertoReference;
 import com.pulsar.config.VertoConfig;
 import com.pulsar.core.VertoBootstrap;
+import com.pulsar.core.protocol.Caller;
+import com.pulsar.core.protocol.verto.VertoProtocol;
 import com.pulsar.loadbalancer.LeastActiveLoadBalancer;
 import com.pulsar.loadbalancer.LoadBalancerFactory;
 import com.pulsar.registry.Registry;
 import com.pulsar.remoting.transport.netty.client.NettyTransportClient;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
 
@@ -17,26 +20,31 @@ import java.io.Closeable;
  * 管理 Netty 传输客户端和负载均衡器的生命周期，
  * 提供 {@link #createProxy} 创建服务代理。
  *
- * <pre>{@code
+ * <pre>{
+
+    private static final Logger log = LoggerFactory.getLogger(VertoClient.class);@code
  * VertoClient client = bootstrap.client().build();
  * HelloService hello = client.createProxy(HelloService.class);
  * String result = hello.sayHello("world");
  * client.close();
  * }</pre>
  */
-@Slf4j
 public class VertoClient implements Closeable {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoClient.class);
 
     private final VertoConfig config;
     private final Registry registry;
     private final NettyTransportClient transportClient;
     private final LoadBalancer loadBalancer;
+    private final VertoProtocol protocol;
 
     private VertoClient(Builder builder) {
         this.config = builder.bootstrap.config();
         this.registry = builder.bootstrap.registry();
 
         this.transportClient = new NettyTransportClient(config.getTransport());
+        this.protocol = new VertoProtocol(config.getTransport().getSerializerKey());
 
         this.loadBalancer = LoadBalancerFactory.getLoadBalancer(config.getLoadBalancer());
 
@@ -61,8 +69,9 @@ public class VertoClient implements Closeable {
             lb = LoadBalancerFactory.getLoadBalancer(ref.loadBalancer());
         }
 
+        Caller invoker = protocol.refer(transportClient, serializer, timeout);
         ClientInvocationHandler handler = new ClientInvocationHandler(
-            registry, lb, transportClient, serializer, version, timeout, retries
+            registry, lb, invoker, version, retries
         );
         return ServiceProxyFactory.create(serviceInterface, handler);
     }

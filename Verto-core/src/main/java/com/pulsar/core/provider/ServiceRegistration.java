@@ -1,4 +1,4 @@
-package com.pulsar.core.server;
+package com.pulsar.core.provider;
 
 import com.pulsar.annotation.VertoService;
 import lombok.Getter;

@@ -1,4 +1,6 @@
 package com.pulsar.remoting.transport.netty.server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.remoting.transport.RequestHandler;
 import com.pulsar.config.TransportConfig;
@@ -10,7 +12,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ExecutorService;
 
@@ -19,8 +20,9 @@ import java.util.concurrent.ExecutorService;
  * 负责启动 TCP 监听、组装 Pipeline（VertoPacketDecoder → VertoPacketEncoder → NettyServerHandler）、
  * 以及优雅关闭
  */
-@Slf4j
 public class NettyTransportServer {
+
+    private static final Logger log = LoggerFactory.getLogger(NettyTransportServer.class);
     private final VertoPacketEncoder encoderHandler = new VertoPacketEncoder();
     private MultiThreadIoEventLoopGroup bossGroup;
     private MultiThreadIoEventLoopGroup workerGroup;

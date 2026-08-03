@@ -1,4 +1,6 @@
 package com.pulsar.remoting.transport.netty.server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.remoting.protocol.PacketStatus;
 import com.pulsar.remoting.protocol.PacketType;
@@ -9,7 +11,6 @@ import com.pulsar.config.TransportConfig;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -21,9 +22,10 @@ import java.util.concurrent.RejectedExecutionException;
  * REQUEST → 调用 {@link RequestHandler} 处理 → 写回 RESPONSE；
  * HEARTBEAT → 写回心跳确认
  */
-@Slf4j
 @ChannelHandler.Sharable
 public class NettyServerHandler extends SimpleChannelInboundHandler<VertoPacket> {
+
+    private static final Logger log = LoggerFactory.getLogger(NettyServerHandler.class);
 
     private final RequestHandler requestHandler;
     private final TransportConfig config;

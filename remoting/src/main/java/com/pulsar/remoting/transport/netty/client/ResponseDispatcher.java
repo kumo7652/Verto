@@ -1,10 +1,11 @@
 package com.pulsar.remoting.transport.netty.client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.model.ActiveCounter;
 import com.pulsar.remoting.protocol.VertoPacket;
 import com.pulsar.utils.ThreadPoolBuilder;
 import io.netty.channel.Channel;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -15,8 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <h3>请求-响应匹配分发器（单例）</h3>
  * 根据 requestId 将响应匹配到对应的 CompletableFuture。
  */
-@Slf4j
 public class ResponseDispatcher {
+
+    private static final Logger log = LoggerFactory.getLogger(ResponseDispatcher.class);
     private static final ResponseDispatcher INSTANCE = new ResponseDispatcher();
     private static final String SCHEDULER_POOL_NAME = "response-dispatcher";
 

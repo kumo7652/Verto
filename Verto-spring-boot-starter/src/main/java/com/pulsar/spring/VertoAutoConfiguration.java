@@ -1,11 +1,12 @@
 package com.pulsar.spring;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.config.VertoConfig;
 import com.pulsar.core.VertoBootstrap;
-import com.pulsar.core.client.VertoClient;
+import com.pulsar.core.consumer.VertoClient;
 import com.pulsar.spring.processor.VertoReferencePostProcessor;
 import com.pulsar.spring.processor.VertoServicePostProcessor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,13 +23,16 @@ import org.springframework.context.annotation.Bean;
  *   <li>{@link VertoServerLifecycle} 在应用就绪后统一暴露服务。</li>
  * </ul>
  *
- * <p>通过 {@code verto.enabled=false} 可整体关闭（默认开启）。
+ * <p>通过 {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoAutoConfiguration.class);@code verto.enabled=false} 可整体关闭（默认开启）。
  */
-@Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(VertoProperties.class)
 @ConditionalOnProperty(prefix = "verto", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class VertoAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoAutoConfiguration.class);
 
     @Bean
     @ConditionalOnMissingBean

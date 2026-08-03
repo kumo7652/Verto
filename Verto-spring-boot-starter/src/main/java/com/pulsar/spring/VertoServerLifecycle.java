@@ -1,10 +1,11 @@
 package com.pulsar.spring;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.pulsar.core.VertoBootstrap;
-import com.pulsar.core.server.ServiceRegistration;
-import com.pulsar.core.server.VertoServer;
+import com.pulsar.core.provider.ServiceRegistration;
+import com.pulsar.core.provider.VertoServer;
 import com.pulsar.spring.processor.VertoServicePostProcessor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.List;
@@ -18,10 +19,13 @@ import java.util.List;
  *   <li>应用关闭时优雅注销服务、停止传输层。</li>
  * </ul>
  *
- * <p>纯消费者应用（无任何 {@code @VertoService}）不会启动服务端，避免空占端口。
+ * <p>纯消费者应用（无任何 {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoServerLifecycle.class);@code @VertoService}）不会启动服务端，避免空占端口。
  */
-@Slf4j
 public class VertoServerLifecycle implements SmartLifecycle {
+
+    private static final Logger log = LoggerFactory.getLogger(VertoServerLifecycle.class);
 
     /** 尽量晚启动、尽量早停止，保证 RPC 服务在应用其余组件就绪后才对外暴露 */
     private static final int PHASE = Integer.MAX_VALUE - 1;
